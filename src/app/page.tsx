@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MutableRefObject
+} from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
 const tracks = [
@@ -56,7 +62,7 @@ const tracks = [
   },
   {
     id: "forbidden-fruit",
-    title: "Forbidden Fruit",
+    title: "Forbidden Fruit (Interlude)",
     lyrics: [
       "Bitten light and sugar dark",
       "Garden gates without a guard",
@@ -86,7 +92,7 @@ const tracks = [
   },
   {
     id: "seoul",
-    title: "Seoul",
+    title: "Seoul (Bonus)",
     lyrics: [
       "Neon rain on Han River",
       "Taxi lights like falling stars",
@@ -97,273 +103,137 @@ const tracks = [
 ];
 
 export default function Page() {
-  const [activeId, setActiveId] = useState(tracks[0].id);
-  const activeTrack = tracks.find((track) => track.id === activeId) ?? tracks[0];
-  const driftSeeds = useMemo(
-    () =>
-      activeTrack.lyrics.map((_, index) => ({
-        dx: (index % 3) * 4 - 4,
-        dy: (index % 4) * 3 - 3,
-        dur: 10 + (index % 5),
-        delay: -(index % 4)
-      })),
-    [activeTrack.id]
-  );
-  const [clientSeeds, setClientSeeds] = useState(driftSeeds);
-  const outerRadius = 170;
-  const innerRadius = 110;
-  const innerRadiusSmall = 50;
-  const tinyRingCount = 4;
-  const tinyStartRadius = 40;
-  const tinyGapStart = 10;
-  const tinyGapStep = 2;
-  // const tinyRadii = [40, 30, 20, 10]
-  const tinyRadii = [];
-  const outerCircumference = 2 * Math.PI * outerRadius;
-  const innerCircumference = 2 * Math.PI * innerRadius;
-  const innerSmallCircumference = 2 * Math.PI * innerRadiusSmall;
-  const tinyCircumferences = tinyRadii.map((radius) => 2 * Math.PI * radius);
-  const outerSegmentLength = outerCircumference / tracks.length;
-  const innerSegmentLength = innerCircumference / tracks.length;
-  const innerSmallSegmentLength = innerSmallCircumference / tracks.length;
-  const tinySegmentLengths = tinyCircumferences.map(
-    (circumference) => circumference / tracks.length
-  );
-  const labelLength = outerSegmentLength * 0.82;
-  const innerLabelLength = innerSegmentLength * 0.82;
-  const innerSmallLabelLength = innerSmallSegmentLength * 0.82;
-  const tinyLabelLengths = tinySegmentLengths.map((length) => length * 0.82);
+  const [offsetsOuter, setOffsetsOuter] = useState<number[]>([]);
+  const [offsetsInnerA, setOffsetsInnerA] = useState<number[]>([]);
+  const [offsetsInnerB, setOffsetsInnerB] = useState<number[]>([]);
+  const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerBRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const outerRadius = 240;
+  const padding = 24;
+  const innerGap = 36;
+  const innerRadiusA = outerRadius - innerGap;
+  const innerRadiusB = outerRadius - innerGap * 2;
+  const segmentPercent = 100 / tracks.length;
 
-  useEffect(() => {
-    setClientSeeds(
-      activeTrack.lyrics.map(() => ({
-        dx: Math.round((Math.random() * 2 - 1) * 14),
-        dy: Math.round((Math.random() * 2 - 1) * 10),
-        dur: Math.round(8 + Math.random() * 8),
-        delay: Math.round(Math.random() * -8)
-      }))
-    );
-  }, [activeTrack.id]);
+  useLayoutEffect(() => {
+    const computeOffsetsForRadius = (
+      refs: MutableRefObject<Array<SVGTextPathElement | null>>,
+      radius: number
+    ) => {
+      const lengths = refs.current.map((node) =>
+        node ? node.getComputedTextLength() : 0
+      );
+      if (lengths.some((length) => length === 0)) return null;
+
+      const circumference = 2 * Math.PI * radius;
+      const totalLength = lengths.reduce((sum, length) => sum + length, 0);
+      const gap = Math.max((circumference - totalLength) / tracks.length, 0);
+      let cursor = 0;
+      return lengths.map((length) => {
+        const start = cursor + gap / 2;
+        cursor += length + gap;
+        return start;
+      });
+    };
+
+    const computeOffsets = () => {
+      const nextOuter = computeOffsetsForRadius(outerRefs, outerRadius);
+      const nextInnerA = computeOffsetsForRadius(innerARefs, innerRadiusA);
+      const nextInnerB = computeOffsetsForRadius(innerBRefs, innerRadiusB);
+      if (!nextOuter || !nextInnerA || !nextInnerB) return;
+      setOffsetsOuter(nextOuter);
+      setOffsetsInnerA(nextInnerA);
+      setOffsetsInnerB(nextInnerB);
+    };
+
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(computeOffsets);
+    });
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        requestAnimationFrame(() => requestAnimationFrame(computeOffsets));
+      });
+    }
+    return () => cancelAnimationFrame(raf);
+  }, [innerRadiusA, innerRadiusB, outerRadius]);
+
+  const size = outerRadius * 2 + padding * 2;
 
   return (
     <main className="page">
       <ParticleLayer className="particleLayer" />
 
-      <div className="layoutRow">
-        <div className="content">
-          {/* <h1 className="title">Xave - Runaway Project (2025)</h1>
-
-          <div className="spacer" /> */}
-
-          <div className="circleWrap">
-            {/* <div className="circleCenter">
-              <div className="circleCenterTitle">{activeTrack.title}</div>
-              <div className="circleCenterHint">Lyrics appear here</div>
-            </div> */}
-            <svg className="circleSvg circleSvgOuter" viewBox="0 0 400 400" aria-hidden="true">
-              <defs>
-                <path
-                  id="trackCirclePathOuter"
-                  d={`M 200,200 m -${outerRadius},0 a ${outerRadius},${outerRadius} 0 1,1 ${outerRadius * 2},0 a ${outerRadius},${outerRadius} 0 1,1 -${outerRadius * 2},0`}
-                />
-              </defs>
-              {tracks.map((track, index) => {
-                const offset = outerSegmentLength * (index + 0.5);
-                return (
-                  <text
-                    key={track.id}
-                    className="circleLabel"
-                    data-active={track.id === activeId}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveId(track.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setActiveId(track.id);
-                      }
-                    }}
-                  >
-                    <textPath
-                      href="#trackCirclePathOuter"
-                      startOffset={offset}
-                      textLength={labelLength}
-                      lengthAdjust="spacingAndGlyphs"
-                    >
-                      {track.title}
-                    </textPath>
-                  </text>
-                );
-              })}
-            </svg>
-            <svg className="circleSvg circleSvgInner" viewBox="0 0 400 400" aria-hidden="true">
-              <defs>
-                <path
-                  id="trackCirclePathInner"
-                  d={`M 200,200 m -${innerRadius},0 a ${innerRadius},${innerRadius} 0 1,1 ${innerRadius * 2},0 a ${innerRadius},${innerRadius} 0 1,1 -${innerRadius * 2},0`}
-                />
-              </defs>
-              {tracks.map((track, index) => {
-                const offset = innerSegmentLength * (index + 0.5);
-                return (
-                  <text
-                    key={`${track.id}-inner`}
-                    className="circleLabel circleLabelInner"
-                    data-active={track.id === activeId}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveId(track.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setActiveId(track.id);
-                      }
-                    }}
-                  >
-                    <textPath
-                      href="#trackCirclePathInner"
-                      startOffset={offset}
-                      textLength={innerLabelLength}
-                      lengthAdjust="spacingAndGlyphs"
-                    >
-                      {track.title}
-                    </textPath>
-                  </text>
-                );
-              })}
-            </svg>
-            <svg className="circleSvg circleSvgInnerSmall" viewBox="0 0 400 400" aria-hidden="true">
-              <defs>
-                <path
-                  id="trackCirclePathInnerSmall"
-                  d={`M 200,200 m -${innerRadiusSmall},0 a ${innerRadiusSmall},${innerRadiusSmall} 0 1,1 ${innerRadiusSmall * 2},0 a ${innerRadiusSmall},${innerRadiusSmall} 0 1,1 -${innerRadiusSmall * 2},0`}
-                />
-              </defs>
-              {tracks.map((track, index) => {
-                const offset = innerSmallSegmentLength * (index + 0.5);
-                return (
-                  <text
-                    key={`${track.id}-inner-small`}
-                    className="circleLabel circleLabelInnerSmall"
-                    data-active={track.id === activeId}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveId(track.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setActiveId(track.id);
-                      }
-                    }}
-                  >
-                    <textPath
-                      href="#trackCirclePathInnerSmall"
-                      startOffset={offset}
-                      textLength={innerSmallLabelLength}
-                      lengthAdjust="spacingAndGlyphs"
-                    >
-                      {track.title}
-                    </textPath>
-                  </text>
-                );
-              })}
-            </svg>
-            {tinyRadii.map((radius, ringIndex) => {
-              const segmentLength = tinySegmentLengths[ringIndex] ?? 0;
-              const ringLabelLength = tinyLabelLengths[ringIndex] ?? 0;
+      <div className="layout">
+        <div className="circleWrap" style={{ "--circle-size": `${size}px` } as CSSProperties}>
+          <svg className="circleSvg" viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+            <defs>
+              <path
+                id="trackCirclePathOuter"
+                d={`M ${outerRadius + padding},${outerRadius + padding} m -${outerRadius},0 a ${outerRadius},${outerRadius} 0 1,1 ${outerRadius * 2},0 a ${outerRadius},${outerRadius} 0 1,1 -${outerRadius * 2},0`}
+              />
+              <path
+                id="trackCirclePathInnerA"
+                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusA},0 a ${innerRadiusA},${innerRadiusA} 0 1,1 ${innerRadiusA * 2},0 a ${innerRadiusA},${innerRadiusA} 0 1,1 -${innerRadiusA * 2},0`}
+              />
+              <path
+                id="trackCirclePathInnerB"
+                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusB},0 a ${innerRadiusB},${innerRadiusB} 0 1,1 ${innerRadiusB * 2},0 a ${innerRadiusB},${innerRadiusB} 0 1,1 -${innerRadiusB * 2},0`}
+              />
+            </defs>
+            {tracks.map((track, index) => {
+              const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+              const offset = offsetsOuter[index] ?? fallbackOffset;
               return (
-                <svg
-                  key={`tiny-ring-${radius}`}
-                  className="circleSvg circleSvgTiny"
-                  viewBox="0 0 400 400"
-                  aria-hidden="true"
-                  style={
-                    {
-                      "--spin-duration": `${18 + ringIndex * 6}s`,
-                      "--spin-direction": ringIndex % 2 === 0 ? "normal" : "reverse",
-                    } as CSSProperties
-                  }
-                >
-                  <defs>
-                    <path
-                      id={`trackCirclePathTiny-${radius}`}
-                      d={`M 200,200 m -${radius},0 a ${radius},${radius} 0 1,1 ${radius * 2},0 a ${radius},${radius} 0 1,1 -${radius * 2},0`}
-                    />
-                  </defs>
-                  {tracks.map((track, index) => {
-                    const offset = segmentLength * (index + 0.5);
-                    return (
-                      <text
-                        key={`${track.id}-tiny-${radius}`}
-                        className="circleLabel circleLabelTiny"
-                        data-active={track.id === activeId}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setActiveId(track.id)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            setActiveId(track.id);
-                          }
-                        }}
-                      >
-                        <textPath
-                          href={`#trackCirclePathTiny-${radius}`}
-                          startOffset={offset}
-                          textLength={ringLabelLength}
-                          lengthAdjust="spacingAndGlyphs"
-                        >
-                          {track.title}
-                        </textPath>
-                      </text>
-                    );
-                  })}
-                </svg>
+                <text key={track.id} className="circleLabel">
+                  <textPath
+                    href="#trackCirclePathOuter"
+                    startOffset={offset}
+                    ref={(node) => {
+                      outerRefs.current[index] = node;
+                    }}
+                  >
+                    {track.title}
+                  </textPath>
+                </text>
               );
             })}
-          </div>
-
-          {/* <div className="spacerLg" /> */}
-
-          {/* <div className="miniRow">
-            <div className="miniBox" title="mini pic box">
-              <Image
-                src="/dance.gif"
-                alt="mini pic box"
-                width={256}
-                height={256}
-                priority
-                unoptimized
-              />
-            </div>
-          </div> */}
-
-          {/* <div className="spacer" /> */}
-
-          {/* <nav className="links">
-            <a href="https://open.spotify.com" target="_blank" rel="noreferrer">
-              Spotify
-            </a>
-            <a href="https://music.apple.com" target="_blank" rel="noreferrer">
-              Apple Music
-            </a>
-            <a href="https://bandcamp.com" target="_blank" rel="noreferrer">
-              Bandcamp
-            </a>
-            <span className="amp">&amp;</span>
-            <a href="/more">More</a>
-          </nav>
-
-          <p className="footer">
-            credit
-          </p>
-
-          <a className="coverLink" href="/cover.png" target="_blank" rel="noreferrer">
-            Cover
-            Credit
-          </a> */}
+            {tracks.map((track, index) => {
+              const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+              const offset = offsetsInnerA[index] ?? fallbackOffset;
+              return (
+                <text key={`${track.id}-inner-a`} className="circleLabel circleLabelInner">
+                  <textPath
+                    href="#trackCirclePathInnerA"
+                    startOffset={offset}
+                    ref={(node) => {
+                      innerARefs.current[index] = node;
+                    }}
+                  >
+                    {track.title}
+                  </textPath>
+                </text>
+              );
+            })}
+            {tracks.map((track, index) => {
+              const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+              const offset = offsetsInnerB[index] ?? fallbackOffset;
+              return (
+                <text key={`${track.id}-inner-b`} className="circleLabel circleLabelInner">
+                  <textPath
+                    href="#trackCirclePathInnerB"
+                    startOffset={offset}
+                    ref={(node) => {
+                      innerBRefs.current[index] = node;
+                    }}
+                  >
+                    {track.title}
+                  </textPath>
+                </text>
+              );
+            })}
+          </svg>
         </div>
-
       </div>
     </main>
   );
