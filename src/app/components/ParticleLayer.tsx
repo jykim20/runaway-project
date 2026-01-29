@@ -33,20 +33,23 @@ export default function ParticleLayer({ className }: { className?: string }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const getDpr = () => Math.min(window.devicePixelRatio || 1, 1.25);
+
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = getDpr();
       canvas.width = Math.floor(rect.width * dpr);
       canvas.height = Math.floor(rect.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     const resizeToViewport = () => {
+      const dpr = getDpr();
       canvas.style.width = "100vw";
       canvas.style.height = "100vh";
-      canvas.width = Math.floor(window.innerWidth * (window.devicePixelRatio || 1));
-      canvas.height = Math.floor(window.innerHeight * (window.devicePixelRatio || 1));
-      ctx.setTransform((window.devicePixelRatio || 1), 0, 0, (window.devicePixelRatio || 1), 0, 0);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     resizeToViewport();
@@ -74,13 +77,13 @@ export default function ParticleLayer({ className }: { className?: string }) {
         });
       }
 
-      if (particlesRef.current.length > 400) {
-        particlesRef.current.splice(0, particlesRef.current.length - 400);
+      if (particlesRef.current.length > 200) {
+        particlesRef.current.splice(0, particlesRef.current.length - 200);
       }
     };
 
     const onMove = (e: PointerEvent) => {
-      if (Math.random() < 0.18) spawn(e.clientX, e.clientY);
+      if (Math.random() < 0.1) spawn(e.clientX, e.clientY);
     };
 
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -111,7 +114,7 @@ export default function ParticleLayer({ className }: { className?: string }) {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.shadowColor = "rgba(0,0,0,0.25)";
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 3;
         ctx.lineWidth = 4;
         ctx.strokeStyle = "rgba(0,0,0,0.9)";
         ctx.fillStyle = "rgba(255,255,255,0.98)";
