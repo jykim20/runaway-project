@@ -106,14 +106,17 @@ export default function Page() {
   const [offsetsOuter, setOffsetsOuter] = useState<number[]>([]);
   const [offsetsInnerA, setOffsetsInnerA] = useState<number[]>([]);
   const [offsetsInnerB, setOffsetsInnerB] = useState<number[]>([]);
+  const [offsetsInnerC, setOffsetsInnerC] = useState<number[]>([]);
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerBRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerCRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const outerRadius = 240;
   const padding = 24;
-  const innerGap = 36;
+  const innerGap = 52;
   const innerRadiusA = outerRadius - innerGap;
   const innerRadiusB = outerRadius - innerGap * 2;
+  const innerRadiusC = outerRadius - innerGap * 3;
   const segmentPercent = 100 / tracks.length;
 
   useLayoutEffect(() => {
@@ -141,10 +144,12 @@ export default function Page() {
       const nextOuter = computeOffsetsForRadius(outerRefs, outerRadius);
       const nextInnerA = computeOffsetsForRadius(innerARefs, innerRadiusA);
       const nextInnerB = computeOffsetsForRadius(innerBRefs, innerRadiusB);
-      if (!nextOuter || !nextInnerA || !nextInnerB) return;
+      const nextInnerC = computeOffsetsForRadius(innerCRefs, innerRadiusC);
+      if (!nextOuter || !nextInnerA || !nextInnerB || !nextInnerC) return;
       setOffsetsOuter(nextOuter);
       setOffsetsInnerA(nextInnerA);
       setOffsetsInnerB(nextInnerB);
+      setOffsetsInnerC(nextInnerC);
     };
 
     const raf = requestAnimationFrame(() => {
@@ -156,7 +161,7 @@ export default function Page() {
       });
     }
     return () => cancelAnimationFrame(raf);
-  }, [innerRadiusA, innerRadiusB, outerRadius]);
+  }, [innerRadiusA, innerRadiusB, innerRadiusC, outerRadius]);
 
   const size = outerRadius * 2 + padding * 2;
 
@@ -180,58 +185,87 @@ export default function Page() {
                 id="trackCirclePathInnerB"
                 d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusB},0 a ${innerRadiusB},${innerRadiusB} 0 1,1 ${innerRadiusB * 2},0 a ${innerRadiusB},${innerRadiusB} 0 1,1 -${innerRadiusB * 2},0`}
               />
+              <path
+                id="trackCirclePathInnerC"
+                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusC},0 a ${innerRadiusC},${innerRadiusC} 0 1,1 ${innerRadiusC * 2},0 a ${innerRadiusC},${innerRadiusC} 0 1,1 -${innerRadiusC * 2},0`}
+              />
             </defs>
-            {tracks.map((track, index) => {
-              const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-              const offset = offsetsOuter[index] ?? fallbackOffset;
-              return (
-                <text key={track.id} className="circleLabel">
-                  <textPath
-                    href="#trackCirclePathOuter"
-                    startOffset={offset}
-                    ref={(node) => {
-                      outerRefs.current[index] = node;
-                    }}
-                  >
-                    {track.title}
-                  </textPath>
-                </text>
-              );
-            })}
-            {tracks.map((track, index) => {
-              const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-              const offset = offsetsInnerA[index] ?? fallbackOffset;
-              return (
-                <text key={`${track.id}-inner-a`} className="circleLabel circleLabelInner">
-                  <textPath
-                    href="#trackCirclePathInnerA"
-                    startOffset={offset}
-                    ref={(node) => {
-                      innerARefs.current[index] = node;
-                    }}
-                  >
-                    {track.title}
-                  </textPath>
-                </text>
-              );
-            })}
-            {tracks.map((track, index) => {
-              const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-              const offset = offsetsInnerB[index] ?? fallbackOffset;
-              return (
-                <text key={`${track.id}-inner-b`} className="circleLabel circleLabelInner">
-                  <textPath
-                    href="#trackCirclePathInnerB"
-                    startOffset={offset}
-                    ref={(node) => {
-                      innerBRefs.current[index] = node;
-                    }}
-                  >
-                    {track.title}
-                  </textPath>
-                </text>
-              );
-            })}
+            <g className="circleGroup circleGroupOuter">
+              {tracks.map((track, index) => {
+                const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                const offset = offsetsOuter[index] ?? fallbackOffset;
+                return (
+                  <text key={track.id} className="circleLabel">
+                    <textPath
+                      href="#trackCirclePathOuter"
+                      startOffset={offset}
+                      ref={(node) => {
+                        outerRefs.current[index] = node;
+                      }}
+                    >
+                      {track.title}
+                    </textPath>
+                  </text>
+                );
+              })}
+            </g>
+            <g className="circleGroup circleGroupInnerA">
+              {tracks.map((track, index) => {
+                const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                const offset = offsetsInnerA[index] ?? fallbackOffset;
+                return (
+                  <text key={`${track.id}-inner-a`} className="circleLabel circleLabelInner">
+                    <textPath
+                      href="#trackCirclePathInnerA"
+                      startOffset={offset}
+                      ref={(node) => {
+                        innerARefs.current[index] = node;
+                      }}
+                    >
+                      {track.title}
+                    </textPath>
+                  </text>
+                );
+              })}
+            </g>
+            <g className="circleGroup circleGroupInnerB">
+              {tracks.map((track, index) => {
+                const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                const offset = offsetsInnerB[index] ?? fallbackOffset;
+                return (
+                  <text key={`${track.id}-inner-b`} className="circleLabel circleLabelInner">
+                    <textPath
+                      href="#trackCirclePathInnerB"
+                      startOffset={offset}
+                      ref={(node) => {
+                        innerBRefs.current[index] = node;
+                      }}
+                    >
+                      {track.title}
+                    </textPath>
+                  </text>
+                );
+              })}
+            </g>
+            <g className="circleGroup circleGroupInnerC">
+              {tracks.map((track, index) => {
+                const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                const offset = offsetsInnerC[index] ?? fallbackOffset;
+                return (
+                  <text key={`${track.id}-inner-c`} className="circleLabel circleLabelInner">
+                    <textPath
+                      href="#trackCirclePathInnerC"
+                      startOffset={offset}
+                      ref={(node) => {
+                        innerCRefs.current[index] = node;
+                      }}
+                    >
+                      {track.title}
+                    </textPath>
+                  </text>
+                );
+              })}
+            </g>
           </svg>
         </div>
       </div>
