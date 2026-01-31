@@ -16,90 +16,197 @@ const tracks = [
     id: "safety-guide",
     title: "Safety Guide",
     lyrics: [
-      "Keep your breath close to the light",
-      "Count the steps between the doors",
-      "If the hallway turns to water",
-      "Swim it back to where you were"
+      "{Instrumental}"
     ]
   },
   {
     id: "lock-pick",
     title: "Lock Pick",
     lyrics: [
-      "Tin sound, soft sparks, silent key",
-      "Every latch is listening",
-      "The night leans in, the metal sings",
-      "We leave no trace, no name, no ring"
+      "Every time it doesn't feel right",
+      "Wash my face with acid",
+      "This time I know it should be fine",
+      "All alone I know Im gonna be alright",
+      "~",
+      "Trees waving at me do a high-five",
+      "Do you miss me I missed you",
+      "(Missed you x2)",
+      "Lock picks on a chain make a timeline",
+      "And I hide the keys In your room",
+      "(I wanna lose it forever x2)",
+      "Its too much when I know its too much",
+      "Its too much when I know it too much",
+      "~"
+      
     ]
   },
   {
     id: "have-fun",
     title: "Have Fun",
     lyrics: [
-      "Laugh in the dark, off the grid",
-      "Run in the rain, barefooted",
-      "If we get caught, just say we won",
-      "No map tonight, just have fun"
+      "(Its going to)",
+      "I have a mission Im on my way to star",
+      "I have a mission I gotta have some fun",
+      "I gotta have some fun",
+      "(I gotta have some fun)",
+      "Break the rules like nothing",
+      "(I run away from this real life)",
+      "Guilty pleasure that’s nothing",
+      "(Nothing in to nothing)",
+      "This is my last time",
+      "Its not gonna happen twice",
+      "This is my secret escapade",
+      "You should keep this to my grave",
+      "Is this what you want",
+      "Is this what you want",
+      "Rocket pills are not fun is not fun (anymore)",
+      "White powders are not fun is not fun anymore",
+      "Something feels wrong",
+      "Something feels wrong",
+      "~",
+      "I have a mission Im on my way to star",
+      "I have a mission I gotta have some fun"
     ]
   },
   {
     id: "off-bones",
     title: "Off Bones",
     lyrics: [
-      "We are lighter than the names we wear",
-      "We are wind caught in the stairs",
-      "Lose the weight of every word",
-      "Let the marrow learn to turn"
+      "Please wake me up when Its over",
+      "I'll do the same when Im sober",
+      "I'll do the same x3",
+      "Last time when I wake up",
+      "Its loop glued to mental x2",
+      "Its loop",
+      "(Can't get over myself)",
+      "Run away from own shell",
+      "Run away from this hell",
+      "Last time when I wake up",
+      "Wake up x3",
+      "Its loop",
+      "~",
+      "Maybe its not what I expected",
+      "(Can’t handle this no more)",
+      "I need somebody to help me",
+      "Tearing my skin off bones",
+      "(Off bones - Off bones)",
+      "~"
     ]
   },
   {
     id: "eraser",
     title: "Eraser",
     lyrics: [
-      "Soft dust on your sleeve again",
-      "Erase the line, redraw the end",
-      "If I disappear in chalk",
-      "Trace me back with your own walk"
+      "Since I meet you I look for something that is true",
+      "You can take my everything I never doubt you",
+      "Blurry on my mind Silver Color I seek clues",
+      "(Silver color I seek clues x2)",
+      "Since I meet you I look for something that is true",
+      "You can take my everything I never doubt you",
+      "Blurry on my head I seek color that is true",
+      "(I seek color that is true)",
+      "I blow the dust away before she finds out",
+      "Because my heart is like eraser x3",
+      "You can use me",
+      "You can hurt me",
+      "But be careful not to lose me",
+      "x2",
+      "(Not to lose me x2)",
+      "~",
+      "Mixed emotions I have it in my pocket x2",
+      "You can use me",
+      "You can hurt me",
+      "But be careful not to lose me",
+      "You can use me",
+      "You can hurt me",,
+      "~"
     ]
   },
   {
     id: "forbidden-fruit",
     title: "Forbidden Fruit (Interlude)",
     lyrics: [
-      "Bitten light and sugar dark",
-      "Garden gates without a guard",
-      "Hold the fire, taste the proof",
-      "I’m the bruise, you’re the truth"
+      "{Instrumental}"
     ]
   },
   {
     id: "helium",
     title: "Helium",
     lyrics: [
-      "Voice goes thin, balloon heart",
-      "Float the room, pull apart",
-      "If the ceiling lets us go",
-      "We will never come down slow"
+      "Memory breaks like piñata",
+      "Don’t care anymore",
+      "I just can’t fall in love when it’s beautiful",
+      "So I can’t recall your name",
+      "Even if I want,",
+      "The blindfold of Justitia",
+      "I'm just tryna peel it off",
+      "She played me dirty, so I play it worse",
+      "Feel like helium",
+      "Floating too high, unmixed, alien",
+      "If she notices me one time",
+      "The scales will tip two times",
+      "So baby, I’m not your savior, maybe",
+      "Fatal kind of mercy",
+      "I’ll rewrite the last line",
+      "~",
+      "I’m chasing places I can’t ever reach",
+      "Just like a kid who runs for the rainbow",
+      "I’m turning you mythic in everything you preach",
+      "Just like a fanboy, just like a fanboy",
+      "Do you really know me, inside out?",
+      "Just like the passwords I told you before",
+      "Will I learn to breathe without holding my breath?",
+      "Just like a diver who’s ready for more",
+      "~",
+      "Lost it the second I had it all",
+      "Lost in the memories can I carry on",
+      "Do you really know me if you weren’t really there x2",
+      "I can't take this damage over you",
+      "I can’t take this loss over you",
+      "Double necklace, I think you know what it means x2",
+      "I'm just tryna peel it off",
+      "She played me dirty, so I play it worse",
+      "Feel like helium",
+      "Floating too high, unmixed, alien",
+      "~",
+      "If she notices me one time",
+      "The scales will tip two times",
+      "So baby, I’m not your savior, maybe",
+      "Fatal kind of mercy",
+      "I’ll rewrite the last line"
     ]
   },
   {
     id: "afraid",
     title: "What are you afraid of?",
     lyrics: [
-      "Shadows singing in the sink",
-      "Creaks that sound like second thoughts",
-      "Every mirror tells on us",
-      "Every window keeps our dots"
+      "3 days in London ",
+      "Hotel I stay up all night feeling drugs",
+      "x2",
+      "Im running in circles",
+      "running in circles",
+      "running in circles",
+      "We are running in circles",
+      "running in circles",
+      "running in circles",
+      "There’s something I can’t tell",
+      "But you know its been this way",
+      "You can fill up  voids with my voice",
+      "So what are you afraid of?",
+      "~",
+      "Please take care of me when",
+      "every time I fall back “its  okay“",
+      "x2",
+      "(It's okay x3)",
+      "Please  take care of me x4",
+      "~"
     ]
   },
   {
     id: "seoul",
     title: "Seoul (Bonus)",
     lyrics: [
-      "Neon rain on Han River",
-      "Taxi lights like falling stars",
-      "We fold time on narrow streets",
-      "Home is where the echoes are"
+      "{Instrumental}"
     ]
   }
 ];
@@ -424,6 +531,22 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     markRevealed(ring, index);
   };
 
+  const resetScramble = () => {
+    setRevealedLabels({
+      outer: Array(tracks.length).fill(false),
+      innerA: Array(tracks.length).fill(false),
+      innerB: Array(tracks.length).fill(false),
+      innerC: Array(tracks.length).fill(false)
+    });
+    setHoveredLabel(null);
+    setScrambledTitles({
+      outer: tracks.map((track) => track.title),
+      innerA: tracks.map((track) => track.title),
+      innerB: tracks.map((track) => track.title),
+      innerC: tracks.map((track) => track.title)
+    });
+  };
+
   const size = outerRadius * 2 + padding * 2;
 
   return (
@@ -442,6 +565,19 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             } as CSSProperties
           }
         >
+          <div
+            className="circleCenterLabel"
+            style={{ "--center-size": `${innerRadiusC * 2 * 0.9}px` } as CSSProperties}
+            onClick={resetScramble}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") resetScramble();
+            }}
+          >
+            <span className="centerTitle">Runaway Project</span>
+            <span className="centerYear">(2025)</span>
+          </div>
           {rasterLayers && (
             <div className="rasterStack" aria-hidden="true">
               <div

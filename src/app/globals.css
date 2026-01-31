@@ -62,6 +62,38 @@ a:hover { text-decoration: none; }
   contain: layout paint;
 }
 
+.circleCenterLabel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  max-width: calc(var(--center-size, 120px) * 0.9);
+  text-align: center;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  /* text-transform: uppercase; */
+  color: #111;
+  z-index: 2;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.circleCenterLabel .centerTitle,
+.circleCenterLabel .centerYear {
+  display: block;
+  line-height: 1.1;
+}
+
+.circleCenterLabel .centerYear {
+  margin-top: 4px;
+  letter-spacing: 0.2em;
+}
+
 /* .zStack {
   --z-count: 10;
   position: absolute;
@@ -179,7 +211,7 @@ a:hover { text-decoration: none; }
 
 .circleLabel {
   fill: currentColor;
-  font-size: 19px;
+  font-size: 15px;
   letter-spacing: 0.02em;
   opacity: 0.7;
   text-rendering: optimizeSpeed;
@@ -213,13 +245,13 @@ a:hover { text-decoration: none; }
 }
 
 .circleGroupInnerA .circleLabel {
-  font-size: 15px;
+  font-size: 12px;
   letter-spacing: 0.015em;
   /* transform: scaleX(0.98); */
 }
 
 .circleGroupInnerB .circleLabel {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.01em;
   /* transform: scaleX(0.95); */
 }
