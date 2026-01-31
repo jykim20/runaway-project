@@ -104,15 +104,19 @@ const tracks = [
 ];
 
 export default function Page() {
+  // React state arrays that hold the computed startOffset values for each ring's <textPath> elements
+  // offsetsOuter is an array of numbers for the outer ring. Each entry matches a track and represents where along the path its label should start. 
   const [offsetsOuter, setOffsetsOuter] = useState<number[]>([]);
   const [offsetsInnerA, setOffsetsInnerA] = useState<number[]>([]);
   const [offsetsInnerB, setOffsetsInnerB] = useState<number[]>([]);
   const [offsetsInnerC, setOffsetsInnerC] = useState<number[]>([]);
+  // Refs for <textPath> nodes per ring so text lengths can be measured
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerBRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerCRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const circleGroupRefs = useRef<Array<HTMLElement | SVGElement | null>>([]);
+  // State for rasterized SVG layers (inner A/B/C)
   const svgRef = useRef<SVGSVGElement | null>(null);
   const fontDataRef = useRef<string | null>(null);
   const [rasterLayers, setRasterLayers] = useState<{
@@ -120,19 +124,24 @@ export default function Page() {
     innerB: string;
     innerC: string;
   } | null>(null);
+  // Base geometry
   const outerRadius = 240;
   const padding = 24;
   const innerGap = 52;
-  const innerFontSize = 12;
+  // Font sizes for inner rings
+  const innerFontSizeA = 16;
+  const innerFontSizeB = 12;
   const innerFontSizeC = 8;
+  // Radii for inner rings computed from outer radius and gaps
   const innerRadiusA = outerRadius - innerGap;
   const innerRadiusB = outerRadius - innerGap * 2;
   const innerRadiusC = outerRadius - innerGap * 3;
   const displayedTracks = tracks;
   const segmentPercent = 100 / displayedTracks.length;
-  const zLayers = 6;
 
   useLayoutEffect(() => {
+
+    // Measure label lengths and compute evenly spaced start offsets around a ring
     const computeOffsetsForRadius = (
       refs: MutableRefObject<Array<SVGTextPathElement | null>>,
       radius: number
@@ -153,6 +162,7 @@ export default function Page() {
       });
     };
 
+    // computes and stores the startOffset arrays for each ring
     const computeOffsets = () => {
       const nextOuter = computeOffsetsForRadius(outerRefs, outerRadius);
       if (!nextOuter) return;
@@ -170,6 +180,7 @@ export default function Page() {
       setOffsetsInnerC(nextInnerC);
     };
 
+    // Schedules offset calculation at the right time and cleans up. Waits for the layout and fonts to fully settled before measuring text lengths (fonts and SVG paths can take an extra frame to resolve)
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(computeOffsets);
     });
@@ -181,6 +192,7 @@ export default function Page() {
     return () => cancelAnimationFrame(raf);
   }, [innerRadiusA, innerRadiusB, innerRadiusC, outerRadius, rasterLayers]);
 
+  // Assigns randomized pulse scale/speed/delay CSS variables to each ring wrapper. 
   useEffect(() => {
     const groups = circleGroupRefs.current.filter(
       (group): group is HTMLElement | SVGElement => Boolean(group)
@@ -188,9 +200,14 @@ export default function Page() {
     if (!groups.length) return;
 
     groups.forEach((group, index) => {
+      const isOuter = index === 0;
       const isInnermost = index === 2;
-      const min = (isInnermost ? 0.9 : 0.95) + Math.random() * 0.02;
-      const max = min + (isInnermost ? 0.1 : 0.06) + Math.random() * 0.02;
+      const min = isOuter
+        ? 1
+        : (isInnermost ? 0.9 : 0.95) + Math.random() * 0.02;
+      const max = isOuter
+        ? 1
+        : min + (isInnermost ? 0.1 : 0.06) + Math.random() * 0.02;
       const speed = 5 + Math.random() * 4;
       const delay = -Math.random() * speed;
       group.style.setProperty("--pulse-min", min.toFixed(3));
@@ -200,10 +217,12 @@ export default function Page() {
     });
   }, [rasterLayers]);
 
+  // Resets the rasterized inner ring images whenever any inner font size changes
   useEffect(() => {
     setRasterLayers(null);
-  }, [innerFontSize, innerFontSizeC]);
+  }, [innerFontSizeA, innerFontSizeB, innerFontSizeC]);
 
+  // Rasterizes the inner rings into images once the SVG is ready and text offsets are computed
   useEffect(() => {
     if (rasterLayers) return;
     if (!svgRef.current) return;
@@ -212,7 +231,7 @@ export default function Page() {
     const serializer = new XMLSerializer();
     const ensureFont = async () => {
       if (fontDataRef.current) return fontDataRef.current;
-      const res = await fetch("/fonts/SuisseIntl-Light.ttf");
+      const res = await fetch("/fonts/SuisseIntl-Thin.otf");
       const buffer = await res.arrayBuffer();
       const bytes = new Uint8Array(buffer);
       let binary = "";
@@ -238,13 +257,14 @@ export default function Page() {
       style.textContent = `
 @font-face {
   font-family: "Suisse Intl";
-  src: url(data:font/ttf;base64,${base64}) format("truetype");
-  font-weight: 300;
+  src: url(data:font/otf;base64,${base64}) format("opentype");
+  font-weight: 200;
   font-style: normal;
 }
-svg { font-family: "Suisse Intl", sans-serif; font-weight: 300; }
-.circleLabelInner { font-size: ${innerFontSize}px; }
+svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
+.circleLabelInner { font-size: ${innerFontSizeB}px; font-weight: 200; }
 .circleLabelInner { opacity: 0.7; }
+.circleGroupInnerA .circleLabelInner { font-size: ${innerFontSizeA}px; }
 .circleGroupInnerC .circleLabelInner { font-size: ${innerFontSizeC}px; }
       `.trim();
       clone.prepend(style);
@@ -275,21 +295,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 300; }
       <ParticleLayer className="particleLayer" />
 
       <div className="layout">
-        <div className="zStack" aria-hidden="true">
-          {Array.from({ length: zLayers }).map((_, index) => (
-            <div
-              key={`z-layer-${index}`}
-              className="zCircle"
-              style={{ "--z-index": index } as CSSProperties}
-            />
-          ))}
-        </div>
         <div
           className="circleWrap"
           style={
             {
               "--circle-size": `${size}px`,
-              "--inner-font-size": `${innerFontSize}px`,
+              "--inner-font-size-a": `${innerFontSizeA}px`,
+              "--inner-font-size": `${innerFontSizeB}px`,
               "--inner-font-size-c": `${innerFontSizeC}px`
             } as CSSProperties
           }
@@ -352,7 +364,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 300; }
                 d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusC},0 a ${innerRadiusC},${innerRadiusC} 0 1,1 ${innerRadiusC * 2},0 a ${innerRadiusC},${innerRadiusC} 0 1,1 -${innerRadiusC * 2},0`}
               />
             </defs>
-            <g className="circleGroupWrap">
+            <g className="circleGroupWrap circleGroupWrapOuter">
               <g className="circleGroup circleGroupOuter">
                 {displayedTracks.map((track, index) => {
                   const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
