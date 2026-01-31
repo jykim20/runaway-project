@@ -107,8 +107,8 @@ a:hover { text-decoration: underline; }
 .circleGroupWrap {
   transform-origin: 50% 50%;
   transform-box: view-box;
-  animation: ringPulse var(--pulse-speed, 6s) ease-in-out infinite;
-  animation-delay: var(--pulse-delay, 0s);
+  /* animation: ringPulse var(--pulse-speed, 6s) ease-in-out infinite; */
+  /* animation-delay: var(--pulse-delay, 0s); */
   will-change: transform;
   transform: translateZ(0);
 }
@@ -179,7 +179,7 @@ a:hover { text-decoration: underline; }
 
 .circleLabel {
   fill: currentColor;
-  font-size: 20px;
+  font-size: 19px;
   letter-spacing: 0.02em;
   opacity: 0.7;
   text-rendering: optimizeSpeed;
@@ -207,8 +207,13 @@ a:hover { text-decoration: underline; }
   font-size: var(--inner-font-size-c, 10px);
 }
 
+.circleMeasure {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .circleGroupInnerA .circleLabel {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.015em;
   /* transform: scaleX(0.98); */
 }
