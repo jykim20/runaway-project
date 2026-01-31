@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type MutableRefObject
+  type MutableRefObject,
+  type PointerEvent as ReactPointerEvent
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
@@ -117,6 +118,17 @@ export default function Page() {
     innerC: tracks.map((track) => track.title)
   }));
   const [scrambleActive, setScrambleActive] = useState(true);
+  const [hoveredLabel, setHoveredLabel] = useState<{
+    ring: "outer" | "innerA" | "innerB" | "innerC";
+    index: number;
+  } | null>(null);
+  const [revealedLabels, setRevealedLabels] = useState(() => ({
+    outer: Array(tracks.length).fill(false) as boolean[],
+    innerA: Array(tracks.length).fill(false) as boolean[],
+    innerB: Array(tracks.length).fill(false) as boolean[],
+    innerC: Array(tracks.length).fill(false) as boolean[]
+  }));
+  const revealedLabelsRef = useRef(revealedLabels);
   // Refs for <textPath> nodes per ring so text lengths can be measured
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
@@ -151,18 +163,15 @@ export default function Page() {
   const segmentPercent = 100 / displayedTracks.length;
 
   useEffect(() => {
+    revealedLabelsRef.current = revealedLabels;
+  }, [revealedLabels]);
+
+  useEffect(() => {
     const symbols = "!@#$%^&*+-=?:;<>[]{}~";
     const scrambleInterval = 90;
-    const scrambleDuration = 2200;
-    const revealInterval = 220;
-    const settleDuration = 1600;
-    const totalSteps = tracks.length * 4;
-    let revealCount = 0;
     setScrambleActive(true);
     setRasterLayers(null);
     let intervalId: number | null = null;
-    let phaseTimeoutId: number | null = null;
-    let revealTimeoutId: number | null = null;
 
     const scrambleText = (text: string) =>
       text
@@ -170,55 +179,55 @@ export default function Page() {
         .map((char) => (char === " " ? " " : symbols[Math.floor(Math.random() * symbols.length)]))
         .join("");
 
-    const buildTitles = (revealedCount: number) => {
-      const isRevealed = (ringIndex: number, trackIndex: number) =>
-        ringIndex * tracks.length + trackIndex < revealedCount;
-      return {
+    const updateTitles = () => {
+      const revealed = revealedLabelsRef.current;
+      const next = {
         outer: tracks.map((track, index) =>
-          isRevealed(0, index) ? track.title : scrambleText(track.title)
+          revealed.outer[index] ? track.title : scrambleText(track.title)
         ),
         innerA: tracks.map((track, index) =>
-          isRevealed(1, index) ? track.title : scrambleText(track.title)
+          revealed.innerA[index] ? track.title : scrambleText(track.title)
         ),
         innerB: tracks.map((track, index) =>
-          isRevealed(2, index) ? track.title : scrambleText(track.title)
+          revealed.innerB[index] ? track.title : scrambleText(track.title)
         ),
         innerC: tracks.map((track, index) =>
-          isRevealed(3, index) ? track.title : scrambleText(track.title)
+          revealed.innerC[index] ? track.title : scrambleText(track.title)
         )
       };
+      setScrambledTitles((prev) => {
+        const same =
+          prev.outer.join("") === next.outer.join("") &&
+          prev.innerA.join("") === next.innerA.join("") &&
+          prev.innerB.join("") === next.innerB.join("") &&
+          prev.innerC.join("") === next.innerC.join("");
+        return same ? prev : next;
+      });
     };
 
-    const updateTitles = () => {
-      setScrambledTitles(buildTitles(revealCount));
-    };
-
-    const startScramblePhase = () => {
-      revealCount = 0;
+    const start = () => {
+      if (intervalId !== null) return;
+      intervalId = window.setInterval(updateTitles, scrambleInterval);
       updateTitles();
-      phaseTimeoutId = window.setTimeout(startRevealPhase, scrambleDuration);
+    };
+    const stop = () => {
+      if (intervalId === null) return;
+      window.clearInterval(intervalId);
+      intervalId = null;
     };
 
-    const startRevealPhase = () => {
-      const step = () => {
-        revealCount = Math.min(revealCount + 1, totalSteps);
-        updateTitles();
-        if (revealCount >= totalSteps) {
-          phaseTimeoutId = window.setTimeout(startScramblePhase, settleDuration);
-          return;
-        }
-        revealTimeoutId = window.setTimeout(step, revealInterval);
-      };
-      step();
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
     };
 
-    intervalId = window.setInterval(updateTitles, scrambleInterval);
-    startScramblePhase();
+    document.addEventListener("visibilitychange", handleVisibility);
+    start();
+    updateTitles();
 
     return () => {
-      if (intervalId !== null) window.clearInterval(intervalId);
-      if (phaseTimeoutId !== null) window.clearTimeout(phaseTimeoutId);
-      if (revealTimeoutId !== null) window.clearTimeout(revealTimeoutId);
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
 
@@ -373,11 +382,53 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     };
   }, [offsetsInnerA.length, offsetsInnerB.length, offsetsInnerC.length, rasterLayers, scrambleActive]);
 
+  const markRevealed = (
+    ring: "outer" | "innerA" | "innerB" | "innerC",
+    index: number
+  ) => {
+    setRevealedLabels((prev) => {
+      if (prev[ring][index]) return prev;
+      const next = {
+        outer: [...prev.outer],
+        innerA: [...prev.innerA],
+        innerB: [...prev.innerB],
+        innerC: [...prev.innerC]
+      };
+      next[ring][index] = true;
+      revealedLabelsRef.current = next;
+      return next;
+    });
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    const target = (event.target as Element | null)?.closest?.("[data-ring]");
+    if (!target) {
+      if (hoveredLabel) setHoveredLabel(null);
+      return;
+    }
+    const ring = target.getAttribute("data-ring") as
+      | "outer"
+      | "innerA"
+      | "innerB"
+      | "innerC"
+      | null;
+    const indexAttr = target.getAttribute("data-index");
+    const index = indexAttr ? Number(indexAttr) : Number.NaN;
+    if (!ring || Number.isNaN(index)) {
+      if (hoveredLabel) setHoveredLabel(null);
+      return;
+    }
+    if (!hoveredLabel || hoveredLabel.ring !== ring || hoveredLabel.index !== index) {
+      setHoveredLabel({ ring, index });
+    }
+    markRevealed(ring, index);
+  };
+
   const size = outerRadius * 2 + padding * 2;
 
   return (
     <main className="page">
-      <ParticleLayer className="particleLayer" />
+      {/* <ParticleLayer className="particleLayer" /> */}
 
       <div className="layout">
         <div
@@ -430,6 +481,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             className="circleSvg"
             viewBox={`0 0 ${size} ${size}`}
             aria-hidden="true"
+            onPointerMove={handlePointerMove}
+            onMouseLeave={() => setHoveredLabel(null)}
+            onPointerLeave={() => setHoveredLabel(null)}
           >
             <defs>
               <path
@@ -455,13 +509,22 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                   const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
                   const offset = offsetsOuter[index] ?? fallbackOffset;
                   return (
-                    <a key={track.id} href={`#${track.id}`} className="circleLink">
+                    <a
+                      key={track.id}
+                      href={`#${track.id}`}
+                      className="circleLink"
+                      data-ring="outer"
+                      data-index={index}
+                    >
                       <text className="circleLabel">
                         <textPath
                           href="#trackCirclePathOuter"
                           startOffset={offset}
                         >
-                          {scrambledTitles.outer[index] ?? track.title}
+                          {revealedLabels.outer[index] ||
+                          (hoveredLabel?.ring === "outer" && hoveredLabel.index === index)
+                            ? track.title
+                            : scrambledTitles.outer[index] ?? track.title}
                         </textPath>
                       </text>
                     </a>
@@ -501,12 +564,20 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
                       const offset = offsetsInnerA[index] ?? fallbackOffset;
                       return (
-                        <text key={`${track.id}-inner-a`} className="circleLabel circleLabelInner">
+                        <text
+                          key={`${track.id}-inner-a`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerA"
+                          data-index={index}
+                        >
                           <textPath
                             href="#trackCirclePathInnerA"
                             startOffset={offset}
                           >
-                            {scrambledTitles.innerA[index] ?? track.title}
+                            {revealedLabels.innerA[index] ||
+                            (hoveredLabel?.ring === "innerA" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerA[index] ?? track.title}
                           </textPath>
                         </text>
                       );
@@ -524,12 +595,20 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
                       const offset = offsetsInnerB[index] ?? fallbackOffset;
                       return (
-                        <text key={`${track.id}-inner-b`} className="circleLabel circleLabelInner">
+                        <text
+                          key={`${track.id}-inner-b`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerB"
+                          data-index={index}
+                        >
                           <textPath
                             href="#trackCirclePathInnerB"
                             startOffset={offset}
                           >
-                            {scrambledTitles.innerB[index] ?? track.title}
+                            {revealedLabels.innerB[index] ||
+                            (hoveredLabel?.ring === "innerB" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerB[index] ?? track.title}
                           </textPath>
                         </text>
                       );
@@ -547,12 +626,20 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
                       const offset = offsetsInnerC[index] ?? fallbackOffset;
                       return (
-                        <text key={`${track.id}-inner-c`} className="circleLabel circleLabelInner">
+                        <text
+                          key={`${track.id}-inner-c`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerC"
+                          data-index={index}
+                        >
                           <textPath
                             href="#trackCirclePathInnerC"
                             startOffset={offset}
                           >
-                            {scrambledTitles.innerC[index] ?? track.title}
+                            {revealedLabels.innerC[index] ||
+                            (hoveredLabel?.ring === "innerC" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerC[index] ?? track.title}
                           </textPath>
                         </text>
                       );
