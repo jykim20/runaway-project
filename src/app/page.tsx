@@ -745,6 +745,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     trackId: string
   ) => {
     event.preventDefault();
+    if (zoomTarget) {
+      window.location.hash = trackId;
+      return;
+    }
     const wrap = circleWrapRef.current;
     if (!wrap) return;
     const rect = wrap.getBoundingClientRect();
