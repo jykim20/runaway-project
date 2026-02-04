@@ -38,6 +38,13 @@ a:hover { text-decoration: none; }
   display: grid;
   place-items: center;
   padding: 28px;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.pageZoomed {
+  transform: translate(var(--zoom-x, 0px), var(--zoom-y, 0px))
+    scale(var(--zoom-scale, 1));
 }
 
 .layout {
@@ -194,6 +201,26 @@ a:hover { text-decoration: none; }
   animation: circleSpinReverse 80s linear infinite;
 }
 
+.rasterInnerD {
+  animation: circleSpin 80s linear infinite;
+}
+
+.rasterInnerE {
+  animation: circleSpinReverse 80s linear infinite;
+}
+
+.rasterInnerF {
+  animation: circleSpin 80s linear infinite;
+}
+
+.rasterInnerG {
+  animation: circleSpinReverse 80s linear infinite;
+}
+
+.rasterInnerH {
+  animation: circleSpin 80s linear infinite;
+}
+
 .circleGroupOuter {
   animation: circleSpin 80s linear infinite;
 }
@@ -210,9 +237,29 @@ a:hover { text-decoration: none; }
   animation: circleSpinReverse 80s linear infinite;
 }
 
+.circleGroupInnerD {
+  animation: circleSpin 80s linear infinite;
+}
+
+.circleGroupInnerE {
+  animation: circleSpinReverse 80s linear infinite;
+}
+
+.circleGroupInnerF {
+  animation: circleSpin 80s linear infinite;
+}
+
+.circleGroupInnerG {
+  animation: circleSpinReverse 80s linear infinite;
+}
+
+.circleGroupInnerH {
+  animation: circleSpin 80s linear infinite;
+}
+
 .circleLabel {
   fill: currentColor;
-  font-size: 15px;
+  font-size: 20px;
   letter-spacing: 0.02em;
   opacity: 0.7;
   text-rendering: optimizeSpeed;
@@ -233,11 +280,31 @@ a:hover { text-decoration: none; }
 }
 
 .circleGroupInnerA .circleLabelInner {
-  font-size: var(--inner-font-size-a, 14px);
+  font-size: var(--inner-font-size-a, 30px);
 }
 
 .circleGroupInnerC .circleLabelInner {
   font-size: var(--inner-font-size-c, 10px);
+}
+
+.circleGroupInnerD .circleLabelInner {
+  font-size: var(--inner-font-size-d, 4px);
+}
+
+.circleGroupInnerE .circleLabelInner {
+  font-size: var(--inner-font-size-e, 3px);
+}
+
+.circleGroupInnerF .circleLabelInner {
+  font-size: var(--inner-font-size-f, 2px);
+}
+
+.circleGroupInnerG .circleLabelInner {
+  font-size: var(--inner-font-size-g, 2px);
+}
+
+.circleGroupInnerH .circleLabelInner {
+  font-size: var(--inner-font-size-h, 2px);
 }
 
 .circleMeasure {
@@ -246,13 +313,13 @@ a:hover { text-decoration: none; }
 }
 
 .circleGroupInnerA .circleLabel {
-  font-size: 12px;
+  font-size: var(--inner-font-size-a, 14px);
   letter-spacing: 0.015em;
   /* transform: scaleX(0.98); */
 }
 
 .circleGroupInnerB .circleLabel {
-  font-size: 10px;
+  font-size: var(--inner-font-size, 12px);
   letter-spacing: 0.01em;
   /* transform: scaleX(0.95); */
 }
