@@ -265,6 +265,21 @@ export default function Page() {
     innerH: Array(tracks.length).fill(false) as boolean[]
   }));
   const revealedLabelsRef = useRef(revealedLabels);
+  useEffect(() => {
+    const body = document.body;
+    const root = document.documentElement;
+    if (zoomTarget) {
+      body.classList.add("noScroll");
+      root.classList.add("noScroll");
+    } else {
+      body.classList.remove("noScroll");
+      root.classList.remove("noScroll");
+    }
+    return () => {
+      body.classList.remove("noScroll");
+      root.classList.remove("noScroll");
+    };
+  }, [zoomTarget]);
   // Refs for <textPath> nodes per ring so text lengths can be measured
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
@@ -742,8 +757,28 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     setZoomTarget({ scale: targetScale, x, y });
     window.setTimeout(() => {
       window.location.hash = trackId;
-    }, 500);
+    }, 820);
   };
+
+  useEffect(() => {
+    if (!zoomTarget) return;
+    const handleBodyClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest(".circleLink")) return;
+      setZoomTarget(null);
+      if (window.location.hash) {
+        window.history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search
+        );
+      }
+    };
+    document.addEventListener("click", handleBodyClick);
+    return () => {
+      document.removeEventListener("click", handleBodyClick);
+    };
+  }, [zoomTarget]);
 
   return (
     <main
