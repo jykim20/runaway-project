@@ -80,15 +80,14 @@ a:focus { outline: none; }
 .lyricsPanel {
   position: fixed;
   top: var(--page-pad, 16px);
+  bottom: var(--page-pad, 16px);
   right: calc(var(--page-pad, 16px) + 16px);
   width: min(var(--lyrics-panel-width, 320px), 40vw);
-  height: calc(100svh - (var(--page-pad) * 2));
-  max-height: calc(100svh - (var(--page-pad) * 2));
   padding: 16px 18px;
   border: none;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(6px);
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
