@@ -153,19 +153,6 @@ a:focus { outline: none; }
   display: none;
 }
 
-.lyricsOverlayClose {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  border: none;
-  background: #111;
-  color: #fff;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 10px 14px;
-  cursor: pointer;
-}
 
 .lyricsGif {
   display: block;

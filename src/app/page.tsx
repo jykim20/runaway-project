@@ -1011,15 +1011,16 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
         </aside>
       )}
       {showOverlay && (
-        <div className="lyricsOverlay" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="lyricsOverlayClose"
-            onClick={() => setOverlayOpen(false)}
+        <div
+          className="lyricsOverlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOverlayOpen(false)}
+        >
+          <div
+            className="lyricsOverlayContent"
+            onClick={(event) => event.stopPropagation()}
           >
-            Close
-          </button>
-          <div className="lyricsOverlayContent">
             <div className="lyricsTitle">{activeTrack?.title}</div>
             <div className="lyricsBody">
               {activeTrack?.lyrics.map((line, index) => (
