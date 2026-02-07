@@ -972,6 +972,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               <p key={`${activeTrack.id}-line-${index}`}>{line}</p>
             ))}
           </div>
+          <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
         </aside>
       )}
       <main

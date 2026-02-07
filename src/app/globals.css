@@ -43,7 +43,7 @@ a:focus { outline: none; }
 
 .page {
   --page-pad: 16px;
-  --lyrics-panel-width: 320px;
+  --lyrics-panel-width: 0px;
   --lyrics-panel-gap: 16px;
   min-height: 100svh;
   display: grid;
@@ -58,6 +58,7 @@ a:focus { outline: none; }
 }
 
 .pageZoomed {
+  --lyrics-panel-width: 320px;
   transform: translate(var(--zoom-x, 0px), var(--zoom-y, 0px))
     scale(var(--zoom-scale, 1));
 }
@@ -100,11 +101,20 @@ a:focus { outline: none; }
 
 .lyricsBody {
   font-size: 12px;
-  line-height: 1.1;
+  line-height: 0.9;
 }
 
 .lyricsBody p {
   margin: 0 0 8px 0;
+}
+
+.lyricsGif {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 12px;
+  margin-left: -12px;
+  opacity: 0.9;
 }
 
 .content {
