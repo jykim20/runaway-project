@@ -43,6 +43,8 @@ a:focus { outline: none; }
 
 .page {
   --page-pad: 16px;
+  --lyrics-panel-width: 320px;
+  --lyrics-panel-gap: 16px;
   min-height: 100svh;
   display: grid;
   place-items: center;
@@ -74,6 +76,37 @@ a:focus { outline: none; }
   z-index: 1;
 }
 
+.lyricsPanel {
+  position: fixed;
+  top: var(--page-pad, 16px);
+  right: calc(var(--page-pad, 16px) + 16px);
+  width: min(var(--lyrics-panel-width, 320px), 40vw);
+  max-height: none;
+  padding: 16px 18px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  overflow: visible;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.lyricsTitle {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.lyricsBody {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.lyricsBody p {
+  margin: 0 0 8px 0;
+}
+
 .content {
   font-size: 14px;
 }
@@ -85,12 +118,12 @@ a:focus { outline: none; }
   width: min(
     var(--circle-size),
     calc(100svh - (var(--page-pad) * 2)),
-    calc(100vw - (var(--page-pad) * 2))
+    calc(100vw - (var(--page-pad) * 2) - var(--lyrics-panel-width) - var(--lyrics-panel-gap))
   );
   height: min(
     var(--circle-size),
     calc(100svh - (var(--page-pad) * 2)),
-    calc(100vw - (var(--page-pad) * 2))
+    calc(100vw - (var(--page-pad) * 2) - var(--lyrics-panel-width) - var(--lyrics-panel-gap))
   );
   display: grid;
   place-items: center;

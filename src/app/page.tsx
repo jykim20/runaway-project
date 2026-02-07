@@ -9,6 +9,7 @@ import {
   type CSSProperties,
   type MutableRefObject,
   type PointerEvent as ReactPointerEvent,
+  type MouseEvent as ReactMouseEvent,
   type TouchEvent as ReactTouchEvent
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
@@ -43,6 +44,7 @@ type TrackLabelProps = {
   displayText: string;
   hrefId: string;
   startOffset: string | number;
+  onClick?: (event: ReactMouseEvent<SVGTextElement>) => void;
 };
 
 const TrackLabel = memo(function TrackLabel({
@@ -51,10 +53,16 @@ const TrackLabel = memo(function TrackLabel({
   dataIndex,
   displayText,
   hrefId,
-  startOffset
+  startOffset,
+  onClick
 }: TrackLabelProps) {
   return (
-    <text className={className} data-ring={dataRing} data-index={dataIndex}>
+    <text
+      className={className}
+      data-ring={dataRing}
+      data-index={dataIndex}
+      onClick={onClick}
+    >
       <textPath href={hrefId} startOffset={startOffset}>
         {displayText}
       </textPath>
@@ -284,6 +292,7 @@ export default function Page() {
     x: number;
     y: number;
   } | null>(null);
+  const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
     outer: tracks.map((track) => track.title),
     innerA: tracks.map((track) => track.title),
@@ -889,13 +898,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     return `M ${startX},${startY} a ${radius},${radius} 0 1,1 ${dx},${dy} a ${radius},${radius} 0 1,1 ${-dx},${-dy}`;
   };
 
-  const handleOuterClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    trackId: string
-  ) => {
-    event.preventDefault();
+  const zoomToTrack = (trackId: string, withHash: boolean) => {
+    setActiveTrackId(trackId);
     if (zoomTarget) {
-      window.location.hash = trackId;
+      if (withHash) window.location.hash = trackId;
       return;
     }
     const wrap = circleWrapRef.current;
@@ -908,9 +914,28 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const x = 0 - centerX / targetScale - 100;
     const y = viewportHeight / targetScale - centerY + 80;
     setZoomTarget({ scale: targetScale, x, y });
-    window.setTimeout(() => {
-      window.location.hash = trackId;
-    }, 820);
+    if (withHash) {
+      window.setTimeout(() => {
+        window.location.hash = trackId;
+      }, 820);
+    }
+  };
+
+  const handleOuterClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    trackId: string
+  ) => {
+    event.preventDefault();
+    zoomToTrack(trackId, true);
+  };
+
+  const handleInnerClick = (
+    event: ReactMouseEvent<SVGTextElement>,
+    trackId: string
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    zoomToTrack(trackId, false);
   };
 
   useEffect(() => {
@@ -933,20 +958,35 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     };
   }, [zoomTarget]);
 
-  return (
-    <main
-      className={`page${zoomTarget ? " pageZoomed" : ""}`}
-      style={
-        {
-          "--zoom-scale": zoomTarget?.scale ?? 1,
-          "--zoom-x": zoomTarget ? `${zoomTarget.x}px` : "0px",
-          "--zoom-y": zoomTarget ? `${zoomTarget.y}px` : "0px"
-        } as CSSProperties
-      }
-    >
-      {/* <ParticleLayer className="particleLayer" />   */}
+  const activeTrack = activeTrackId
+    ? tracks.find((track) => track.id === activeTrackId)
+    : null;
 
-      <div className="layout">
+  return (
+    <>
+      {activeTrack && zoomTarget && (
+        <aside className="lyricsPanel" aria-live="polite">
+          <div className="lyricsTitle">{activeTrack.title}</div>
+          <div className="lyricsBody">
+            {activeTrack.lyrics.map((line, index) => (
+              <p key={`${activeTrack.id}-line-${index}`}>{line}</p>
+            ))}
+          </div>
+        </aside>
+      )}
+      <main
+        className={`page${zoomTarget ? " pageZoomed" : ""}`}
+        style={
+          {
+            "--zoom-scale": zoomTarget?.scale ?? 1,
+            "--zoom-x": zoomTarget ? `${zoomTarget.x}px` : "0px",
+            "--zoom-y": zoomTarget ? `${zoomTarget.y}px` : "0px"
+          } as CSSProperties
+        }
+      >
+        {/* <ParticleLayer className="particleLayer" />   */}
+
+        <div className="layout">
         <div
           ref={circleWrapRef}
           className="circleWrap"
@@ -1144,12 +1184,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-a`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerA"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerA", index, track.title)}
                           hrefId="#trackCirclePathInnerA"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1163,12 +1204,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-b`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerB"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerB", index, track.title)}
                           hrefId="#trackCirclePathInnerB"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1182,12 +1224,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-c`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerC"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerC", index, track.title)}
                           hrefId="#trackCirclePathInnerC"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1201,12 +1244,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-d`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerD"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerD", index, track.title)}
                           hrefId="#trackCirclePathInnerD"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1220,12 +1264,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-e`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerE"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerE", index, track.title)}
                           hrefId="#trackCirclePathInnerE"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1239,12 +1284,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-f`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerF"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerF", index, track.title)}
                           hrefId="#trackCirclePathInnerF"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1258,12 +1304,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-g`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerG"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerG", index, track.title)}
                           hrefId="#trackCirclePathInnerG"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1277,12 +1324,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       return (
                         <TrackLabel
                           key={`${track.id}-inner-h`}
-                          className="circleLabel circleLabelInner"
+                          className="circleLabel circleLabelInner circleLink"
                           dataRing="innerH"
                           dataIndex={index}
                           displayText={getDisplayTitle("innerH", index, track.title)}
                           hrefId="#trackCirclePathInnerH"
                           startOffset={offset}
+                          onClick={(event) => handleInnerClick(event, track.id)}
                         />
                       );
                     })}
@@ -1448,7 +1496,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             )}
           </svg>
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
