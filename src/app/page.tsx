@@ -813,7 +813,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   };
 
   const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-    handleRevealTarget(event.target as Element | null);
+    const element = document.elementFromPoint(event.clientX, event.clientY);
+    handleRevealTarget(element);
   };
 
   const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
