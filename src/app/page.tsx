@@ -293,6 +293,8 @@ export default function Page() {
     y: number;
   } | null>(null);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
     outer: tracks.map((track) => track.title),
     innerA: tracks.map((track) => track.title),
@@ -345,6 +347,25 @@ export default function Page() {
       root.classList.remove("noScroll");
     };
   }, [zoomTarget]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 640px)");
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+    } else {
+      media.addListener(handleChange);
+    }
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener("change", handleChange);
+      } else {
+        media.removeListener(handleChange);
+      }
+    };
+  }, []);
   // Refs for <textPath> nodes per ring so text lengths can be measured
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
@@ -454,6 +475,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    if (overlayOpen && isMobile) return;
     const scrambleInterval = 90;
     const outerPattern = [true];
     const innerPattern = [true];
@@ -561,7 +583,7 @@ export default function Page() {
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [overlayOpen, isMobile]);
 
   useLayoutEffect(() => {
     // Measure label lengths and compute evenly spaced start offsets around a ring
@@ -926,6 +948,12 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     trackId: string
   ) => {
     event.preventDefault();
+    if (isMobile) {
+      setActiveTrackId(trackId);
+      setOverlayOpen(true);
+      setZoomTarget(null);
+      return;
+    }
     zoomToTrack(trackId, true);
   };
 
@@ -935,6 +963,12 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   ) => {
     event.preventDefault();
     event.stopPropagation();
+    if (isMobile) {
+      setActiveTrackId(trackId);
+      setOverlayOpen(true);
+      setZoomTarget(null);
+      return;
+    }
     zoomToTrack(trackId, false);
   };
 
@@ -961,10 +995,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   const activeTrack = activeTrackId
     ? tracks.find((track) => track.id === activeTrackId)
     : null;
+  const showOverlay = Boolean(isMobile && overlayOpen && activeTrack);
 
   return (
     <>
-      {activeTrack && zoomTarget && (
+      {activeTrack && zoomTarget && !showOverlay && (
         <aside className="lyricsPanel" aria-live="polite">
           <div className="lyricsTitle">{activeTrack.title}</div>
           <div className="lyricsBody">
@@ -975,8 +1010,28 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
         </aside>
       )}
+      {showOverlay && (
+        <div className="lyricsOverlay" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="lyricsOverlayClose"
+            onClick={() => setOverlayOpen(false)}
+          >
+            Close
+          </button>
+          <div className="lyricsOverlayContent">
+            <div className="lyricsTitle">{activeTrack?.title}</div>
+            <div className="lyricsBody">
+              {activeTrack?.lyrics.map((line, index) => (
+                <p key={`${activeTrack.id}-line-${index}`}>{line}</p>
+              ))}
+            </div>
+            <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
+          </div>
+        </div>
+      )}
       <main
-        className={`page${zoomTarget ? " pageZoomed" : ""}`}
+        className={`page${zoomTarget ? " pageZoomed" : ""}${showOverlay ? " pagePaused" : ""}`}
         style={
           {
             "--zoom-scale": zoomTarget?.scale ?? 1,
@@ -987,7 +1042,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       >
         {/* <ParticleLayer className="particleLayer" />   */}
 
-        <div className="layout">
+        {!showOverlay && <div className="layout">
         <div
           ref={circleWrapRef}
           className="circleWrap"
@@ -1497,7 +1552,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             )}
           </svg>
         </div>
-        </div>
+        </div>}
       </main>
     </>
   );
