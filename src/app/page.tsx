@@ -819,12 +819,16 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   };
 
   const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
+    if (event.pointerType === "touch") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     handleRevealTarget(event.target as Element | null);
   };
 
   const handlePointerUp = (event: ReactPointerEvent<SVGSVGElement>) => {
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (event.pointerType === "touch") {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   };
 
   const handleTouchAtPoint = (clientX: number, clientY: number) => {
@@ -901,8 +905,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const centerY = rect.top + rect.height / 2;
     const targetScale = 1.35;
     const viewportHeight = window.innerHeight;
-    const x = 0 - centerX / targetScale - 200;
-    const y = viewportHeight / targetScale - centerY + 120;
+    const x = 0 - centerX / targetScale - 100;
+    const y = viewportHeight / targetScale - centerY + 80;
     setZoomTarget({ scale: targetScale, x, y });
     window.setTimeout(() => {
       window.location.hash = trackId;
