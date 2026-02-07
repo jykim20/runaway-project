@@ -817,7 +817,12 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   };
 
   const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
     handleRevealTarget(event.target as Element | null);
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<SVGSVGElement>) => {
+    event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
   const resetScramble = () => {
@@ -1014,6 +1019,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             aria-hidden="true"
             onPointerMove={handlePointerMove}
             onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
             onMouseLeave={() => setHoveredLabel(null)}
             onPointerLeave={() => setHoveredLabel(null)}
           >
