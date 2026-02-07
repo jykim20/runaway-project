@@ -82,14 +82,20 @@ a:focus { outline: none; }
   top: var(--page-pad, 16px);
   right: calc(var(--page-pad, 16px) + 16px);
   width: min(var(--lyrics-panel-width, 320px), 40vw);
-  max-height: none;
+  max-height: calc(100svh - (var(--page-pad) * 2));
   padding: 16px 18px;
   border: none;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(6px);
-  overflow: visible;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   z-index: 10;
   pointer-events: auto;
+}
+
+.lyricsPanel::-webkit-scrollbar {
+  display: none;
 }
 
 .lyricsTitle {
