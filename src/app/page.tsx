@@ -1095,7 +1095,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               "--inner-font-size-f": `${innerFontSizeF}px`,
               "--inner-font-size-g": `${innerFontSizeG}px`,
               "--inner-font-size-h": `${innerFontSizeH}px`
-            } as CSSProperties
+            } as CSSProperties // 
           }
         >
           {/* <div
