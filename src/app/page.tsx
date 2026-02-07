@@ -8,7 +8,8 @@ import {
   useState,
   type CSSProperties,
   type MutableRefObject,
-  type PointerEvent as ReactPointerEvent
+  type PointerEvent as ReactPointerEvent,
+  type TouchEvent as ReactTouchEvent
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
@@ -826,6 +827,23 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
+  const handleTouchAtPoint = (clientX: number, clientY: number) => {
+    const element = document.elementFromPoint(clientX, clientY);
+    handleRevealTarget(element);
+  };
+
+  const handleTouchStart = (event: ReactTouchEvent<SVGSVGElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    handleTouchAtPoint(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (event: ReactTouchEvent<SVGSVGElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    handleTouchAtPoint(touch.clientX, touch.clientY);
+  };
+
   const resetScramble = () => {
     const nextRevealed = {
       outer: Array(tracks.length).fill(false),
@@ -1022,6 +1040,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onMouseLeave={() => setHoveredLabel(null)}
             onPointerLeave={() => setHoveredLabel(null)}
           >
