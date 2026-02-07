@@ -295,6 +295,8 @@ export default function Page() {
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [lyricsScrambleFrame, setLyricsScrambleFrame] = useState(0);
+  const [lyricsScrambleActive, setLyricsScrambleActive] = useState(false);
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
     outer: tracks.map((track) => track.title),
     innerA: tracks.map((track) => track.title),
@@ -996,6 +998,40 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     ? tracks.find((track) => track.id === activeTrackId)
     : null;
   const showOverlay = Boolean(isMobile && overlayOpen && activeTrack);
+  const showLyrics = Boolean(activeTrack && (zoomTarget || showOverlay));
+
+  const scrambleLine = (line: string, frame: number) =>
+    line
+      .split("")
+      .map((char, index) => {
+        if (char === " ") return " ";
+        const seed = (char.charCodeAt(0) + index * 13 + frame * 31) % SCRAMBLE_SYMBOLS.length;
+        return SCRAMBLE_SYMBOLS[seed];
+      })
+      .join("");
+
+  useEffect(() => {
+    if (!showLyrics) {
+      setLyricsScrambleActive(false);
+      setLyricsScrambleFrame(0);
+      return;
+    }
+    let frame = 0;
+    setLyricsScrambleActive(true);
+    setLyricsScrambleFrame(0);
+    const intervalId = window.setInterval(() => {
+      frame += 1;
+      if (frame >= 12) {
+        setLyricsScrambleActive(false);
+        window.clearInterval(intervalId);
+        return;
+      }
+      setLyricsScrambleFrame(frame);
+    }, 60);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [activeTrackId, showLyrics]);
 
   return (
     <>
@@ -1004,7 +1040,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           <div className="lyricsTitle">{activeTrack.title}</div>
           <div className="lyricsBody">
             {activeTrack.lyrics.map((line, index) => (
-              <p key={`${activeTrack.id}-line-${index}`}>{line}</p>
+              <p key={`${activeTrack.id}-line-${index}`}>
+                {lyricsScrambleActive ? scrambleLine(line, lyricsScrambleFrame) : line}
+              </p>
             ))}
           </div>
           <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
@@ -1021,7 +1059,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             <div className="lyricsTitle">{activeTrack?.title}</div>
             <div className="lyricsBody">
               {activeTrack?.lyrics.map((line, index) => (
-                <p key={`${activeTrack.id}-line-${index}`}>{line}</p>
+                <p key={`${activeTrack.id}-line-${index}`}>
+                  {lyricsScrambleActive ? scrambleLine(line, lyricsScrambleFrame) : line}
+                </p>
               ))}
             </div>
             <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
