@@ -866,8 +866,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const centerY = rect.top + rect.height / 2;
     const targetScale = 1.35;
     const viewportHeight = window.innerHeight;
-    const x = 0 - centerX / targetScale;
-    const y = viewportHeight / targetScale - centerY;
+    const x = 0 - centerX / targetScale - 200;
+    const y = viewportHeight / targetScale - centerY + 120;
     setZoomTarget({ scale: targetScale, x, y });
     window.setTimeout(() => {
       window.location.hash = trackId;
