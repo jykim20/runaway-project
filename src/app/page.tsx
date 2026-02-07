@@ -767,13 +767,13 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     return scrambledTitles[ring][index] ?? title;
   };
 
-  const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-    const target = (event.target as Element | null)?.closest?.("[data-ring]");
-    if (!target) {
+  const handleRevealTarget = (target: Element | null) => {
+    const ringTarget = target?.closest?.("[data-ring]");
+    if (!ringTarget) {
       if (hoveredLabel) setHoveredLabel(null);
       return;
     }
-    const ring = target.getAttribute("data-ring") as
+    const ring = ringTarget.getAttribute("data-ring") as
       | "outer"
       | "innerA"
       | "innerB"
@@ -784,7 +784,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       | "innerG"
       | "innerH"
       | null;
-    const indexAttr = target.getAttribute("data-index");
+    const indexAttr = ringTarget.getAttribute("data-index");
     const index = indexAttr ? Number(indexAttr) : Number.NaN;
     if (!ring || Number.isNaN(index)) {
       if (hoveredLabel) setHoveredLabel(null);
@@ -810,6 +810,14 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       revealedLabelsRef.current = next;
       return next;
     });
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    handleRevealTarget(event.target as Element | null);
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+    handleRevealTarget(event.target as Element | null);
   };
 
   const resetScramble = () => {
@@ -1005,6 +1013,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             viewBox={`0 0 ${size} ${size}`}
             aria-hidden="true"
             onPointerMove={handlePointerMove}
+            onPointerDown={handlePointerDown}
             onMouseLeave={() => setHoveredLabel(null)}
             onPointerLeave={() => setHoveredLabel(null)}
           >
