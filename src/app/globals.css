@@ -138,12 +138,12 @@ a:focus { outline: none; }
   z-index: 50;
   display: grid;
   place-items: center;
-  padding: 0;
+  padding: 24px;
 }
 
 .lyricsOverlayContent {
-  width: 100%;
-  height: 100%;
+  width: min(560px, 90vw);
+  height: min(80svh, 680px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
