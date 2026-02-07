@@ -950,6 +950,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     trackId: string
   ) => {
     event.preventDefault();
+    setLyricsScrambleActive(true);
+    setLyricsScrambleFrame(0);
     if (isMobile) {
       setActiveTrackId(trackId);
       setOverlayOpen(true);
@@ -965,6 +967,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   ) => {
     event.preventDefault();
     event.stopPropagation();
+    setLyricsScrambleActive(true);
+    setLyricsScrambleFrame(0);
     if (isMobile) {
       setActiveTrackId(trackId);
       setOverlayOpen(true);
@@ -1005,12 +1009,12 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       .split("")
       .map((char, index) => {
         if (char === " ") return " ";
-        const seed = (char.charCodeAt(0) + index * 13 + frame * 31) % SCRAMBLE_SYMBOLS.length;
-        return SCRAMBLE_SYMBOLS[seed];
+        const seed = (char.charCodeAt(0) + index * 13 + frame * 31) % LYRIC_SCRAMBLE_CHARS.length;
+        return LYRIC_SCRAMBLE_CHARS[seed];
       })
       .join("");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!showLyrics) {
       setLyricsScrambleActive(false);
       setLyricsScrambleFrame(0);
