@@ -833,12 +833,14 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   };
 
   const handleTouchStart = (event: ReactTouchEvent<SVGSVGElement>) => {
+    event.preventDefault();
     const touch = event.touches[0];
     if (!touch) return;
     handleTouchAtPoint(touch.clientX, touch.clientY);
   };
 
   const handleTouchMove = (event: ReactTouchEvent<SVGSVGElement>) => {
+    event.preventDefault();
     const touch = event.touches[0];
     if (!touch) return;
     handleTouchAtPoint(touch.clientX, touch.clientY);

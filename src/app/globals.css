@@ -51,7 +51,7 @@ a:hover { text-decoration: none; }
   transition: transform 800ms cubic-bezier(0.22, 0.61, 0.36, 1);
   position: relative;
   overflow: hidden;
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 .pageZoomed {
