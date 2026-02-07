@@ -1044,6 +1044,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             onPointerCancel={handlePointerUp}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
+            style={{ touchAction: "none" }}
             onMouseLeave={() => setHoveredLabel(null)}
             onPointerLeave={() => setHoveredLabel(null)}
           >
