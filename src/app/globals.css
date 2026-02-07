@@ -162,15 +162,8 @@ a:hover { text-decoration: none; }
 .circleGroupWrap {
   transform-origin: 50% 50%;
   transform-box: view-box;
-  /* animation: ringPulse var(--pulse-speed, 6s) ease-in-out infinite; */
-  /* animation-delay: var(--pulse-delay, 0s); */
   will-change: transform;
   transform: translateZ(0);
-}
-
-.circleGroupWrapOuter {
-  --pulse-min: 1;
-  --pulse-max: 1;
 }
 
 .rasterStack {
@@ -350,10 +343,6 @@ a:hover { text-decoration: none; }
   to { transform: rotate(0deg); }
 }
 
-@keyframes ringPulse {
-  0%, 100% { transform: scale(var(--pulse-min, 0.98)); }
-  50% { transform: scale(var(--pulse-max, 1.02)); }
-}
 
 @keyframes zDriftPulse {
   0% { transform: translateZ(0) scale(1); }
