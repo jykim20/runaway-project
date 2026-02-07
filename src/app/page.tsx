@@ -11,6 +11,8 @@ import {
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
+const ASCII_CHARS = Array.from({ length: 94 }, (_, i) => String.fromCharCode(33 + i)).join("");
+
 const tracks = [
   {
     id: "safety-guide",
@@ -264,7 +266,20 @@ export default function Page() {
     innerG: Array(tracks.length).fill(false) as boolean[],
     innerH: Array(tracks.length).fill(false) as boolean[]
   }));
+  const [revealProgress, setRevealProgress] = useState(() => ({
+    outer: Array(tracks.length).fill(0) as number[],
+    innerA: Array(tracks.length).fill(0) as number[],
+    innerB: Array(tracks.length).fill(0) as number[],
+    innerC: Array(tracks.length).fill(0) as number[],
+    innerD: Array(tracks.length).fill(0) as number[],
+    innerE: Array(tracks.length).fill(0) as number[],
+    innerF: Array(tracks.length).fill(0) as number[],
+    innerG: Array(tracks.length).fill(0) as number[],
+    innerH: Array(tracks.length).fill(0) as number[]
+  }));
   const revealedLabelsRef = useRef(revealedLabels);
+  const revealProgressRef = useRef(revealProgress);
+  const revealIntervalsRef = useRef<Record<string, number>>({});
   useEffect(() => {
     const body = document.body;
     const root = document.documentElement;
@@ -343,6 +358,18 @@ export default function Page() {
   useEffect(() => {
     revealedLabelsRef.current = revealedLabels;
   }, [revealedLabels]);
+
+  useEffect(() => {
+    revealProgressRef.current = revealProgress;
+  }, [revealProgress]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(revealIntervalsRef.current).forEach((id) => {
+        window.clearInterval(id);
+      });
+    };
+  }, []);
 
   useEffect(() => {
     const symbols = "!@#$%^&*+-=?:;<>[]{}~";
@@ -651,7 +678,19 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     scrambleActive
   ]);
 
-  const markRevealed = (
+  const revealStepMs = 5;
+
+  const buildRevealTitle = (title: string, progress: number) =>
+    title
+      .split("")
+      .map((char, index) => {
+        if (char === " ") return " ";
+        if (index < progress) return char;
+        return ASCII_CHARS[Math.floor(Math.random() * ASCII_CHARS.length)];
+      })
+      .join("");
+
+  const startReveal = (
     ring:
       | "outer"
       | "innerA"
@@ -664,23 +703,87 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       | "innerH",
     index: number
   ) => {
-    setRevealedLabels((prev) => {
-      if (prev[ring][index]) return prev;
-      const next = {
-        outer: [...prev.outer],
-        innerA: [...prev.innerA],
-        innerB: [...prev.innerB],
-        innerC: [...prev.innerC],
-        innerD: [...prev.innerD],
-        innerE: [...prev.innerE],
-        innerF: [...prev.innerF],
-        innerG: [...prev.innerG],
-        innerH: [...prev.innerH]
-      };
-      next[ring][index] = true;
-      revealedLabelsRef.current = next;
-      return next;
-    });
+    if (revealedLabelsRef.current[ring][index]) return;
+    const key = `${ring}-${index}`;
+    if (revealIntervalsRef.current[key]) return;
+    const title = tracks[index]?.title ?? "";
+    const max = title.length;
+    if (!max) return;
+
+    const tick = () => {
+      const current = revealProgressRef.current[ring][index];
+      if (current >= max) {
+        window.clearInterval(revealIntervalsRef.current[key]);
+        delete revealIntervalsRef.current[key];
+        return;
+      }
+      const nextValue = Math.min(current + 1, max);
+      setRevealProgress((prev) => {
+        if (prev[ring][index] === nextValue) return prev;
+        const next = {
+          outer: [...prev.outer],
+          innerA: [...prev.innerA],
+          innerB: [...prev.innerB],
+          innerC: [...prev.innerC],
+          innerD: [...prev.innerD],
+          innerE: [...prev.innerE],
+          innerF: [...prev.innerF],
+          innerG: [...prev.innerG],
+          innerH: [...prev.innerH]
+        };
+        next[ring][index] = nextValue;
+        return next;
+      });
+      if (nextValue >= max) {
+        setRevealedLabels((prev) => {
+          if (prev[ring][index]) return prev;
+          const next = {
+            outer: [...prev.outer],
+            innerA: [...prev.innerA],
+            innerB: [...prev.innerB],
+            innerC: [...prev.innerC],
+            innerD: [...prev.innerD],
+            innerE: [...prev.innerE],
+            innerF: [...prev.innerF],
+            innerG: [...prev.innerG],
+            innerH: [...prev.innerH]
+          };
+          next[ring][index] = true;
+          revealedLabelsRef.current = next;
+          return next;
+        });
+        window.clearInterval(revealIntervalsRef.current[key]);
+        delete revealIntervalsRef.current[key];
+      }
+    };
+
+    revealIntervalsRef.current[key] = window.setInterval(tick, revealStepMs);
+    tick();
+  };
+
+  const getDisplayTitle = (
+    ring:
+      | "outer"
+      | "innerA"
+      | "innerB"
+      | "innerC"
+      | "innerD"
+      | "innerE"
+      | "innerF"
+      | "innerG"
+      | "innerH",
+    index: number,
+    title: string
+  ) => {
+    if (revealedLabels[ring][index]) return title;
+    const progress = revealProgress[ring][index] ?? 0;
+    if (
+      progress > 0 ||
+      (hoveredLabel?.ring === ring && hoveredLabel.index === index)
+    ) {
+      return buildRevealTitle(title, progress);
+    }
+    return scrambledTitles[ring][index] ?? title;
   };
 
   const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
@@ -709,11 +812,15 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     if (!hoveredLabel || hoveredLabel.ring !== ring || hoveredLabel.index !== index) {
       setHoveredLabel({ ring, index });
     }
-    markRevealed(ring, index);
+    startReveal(ring, index);
   };
 
   const resetScramble = () => {
-    setRevealedLabels({
+    Object.values(revealIntervalsRef.current).forEach((id) => {
+      window.clearInterval(id);
+    });
+    revealIntervalsRef.current = {};
+    const nextRevealed = {
       outer: Array(tracks.length).fill(false),
       innerA: Array(tracks.length).fill(false),
       innerB: Array(tracks.length).fill(false),
@@ -723,7 +830,22 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       innerF: Array(tracks.length).fill(false),
       innerG: Array(tracks.length).fill(false),
       innerH: Array(tracks.length).fill(false)
-    });
+    };
+    revealedLabelsRef.current = nextRevealed;
+    setRevealedLabels(nextRevealed);
+    const nextProgress = {
+      outer: Array(tracks.length).fill(0),
+      innerA: Array(tracks.length).fill(0),
+      innerB: Array(tracks.length).fill(0),
+      innerC: Array(tracks.length).fill(0),
+      innerD: Array(tracks.length).fill(0),
+      innerE: Array(tracks.length).fill(0),
+      innerF: Array(tracks.length).fill(0),
+      innerG: Array(tracks.length).fill(0),
+      innerH: Array(tracks.length).fill(0)
+    };
+    revealProgressRef.current = nextProgress;
+    setRevealProgress(nextProgress);
     setHoveredLabel(null);
     setScrambledTitles({
       outer: tracks.map((track) => track.title),
@@ -978,10 +1100,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           href="#trackCirclePathOuter"
                           startOffset={offset}
                         >
-                          {revealedLabels.outer[index] ||
-                          (hoveredLabel?.ring === "outer" && hoveredLabel.index === index)
-                            ? track.title
-                            : scrambledTitles.outer[index] ?? track.title}
+                          {getDisplayTitle("outer", index, track.title)}
                         </textPath>
                       </text>
                     </a>
@@ -1031,10 +1150,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerA"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerA[index] ||
-                            (hoveredLabel?.ring === "innerA" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerA[index] ?? track.title}
+                            {getDisplayTitle("innerA", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1062,10 +1178,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerB"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerB[index] ||
-                            (hoveredLabel?.ring === "innerB" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerB[index] ?? track.title}
+                            {getDisplayTitle("innerB", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1093,10 +1206,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerC"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerC[index] ||
-                            (hoveredLabel?.ring === "innerC" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerC[index] ?? track.title}
+                            {getDisplayTitle("innerC", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1124,10 +1234,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerD"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerD[index] ||
-                            (hoveredLabel?.ring === "innerD" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerD[index] ?? track.title}
+                            {getDisplayTitle("innerD", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1155,10 +1262,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerE"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerE[index] ||
-                            (hoveredLabel?.ring === "innerE" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerE[index] ?? track.title}
+                            {getDisplayTitle("innerE", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1186,10 +1290,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerF"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerF[index] ||
-                            (hoveredLabel?.ring === "innerF" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerF[index] ?? track.title}
+                            {getDisplayTitle("innerF", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1217,10 +1318,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerG"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerG[index] ||
-                            (hoveredLabel?.ring === "innerG" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerG[index] ?? track.title}
+                            {getDisplayTitle("innerG", index, track.title)}
                           </textPath>
                         </text>
                       );
@@ -1248,10 +1346,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                             href="#trackCirclePathInnerH"
                             startOffset={offset}
                           >
-                            {revealedLabels.innerH[index] ||
-                            (hoveredLabel?.ring === "innerH" && hoveredLabel.index === index)
-                              ? track.title
-                              : scrambledTitles.innerH[index] ?? track.title}
+                            {getDisplayTitle("innerH", index, track.title)}
                           </textPath>
                         </text>
                       );
