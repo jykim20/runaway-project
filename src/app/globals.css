@@ -198,71 +198,71 @@ a:hover { text-decoration: none; }
 }
 
 .rasterInnerA {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .rasterInnerB {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .rasterInnerC {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .rasterInnerD {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .rasterInnerE {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .rasterInnerF {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .rasterInnerG {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .rasterInnerH {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .circleGroupOuter {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .circleGroupInnerA {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .circleGroupInnerB {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .circleGroupInnerC {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .circleGroupInnerD {
-  animation: circleSpin 80s linear infinite;
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .circleGroupInnerE {
-  animation: circleSpinReverse 80s linear infinite;
+  animation: circleSpin 80s linear infinite;
 }
 
 .circleGroupInnerF {
-  animation: circleSpin 80s linear infinite;
-}
-
-.circleGroupInnerG {
   animation: circleSpinReverse 80s linear infinite;
 }
 
-.circleGroupInnerH {
+.circleGroupInnerG {
   animation: circleSpin 80s linear infinite;
+}
+
+.circleGroupInnerH {
+  animation: circleSpinReverse 80s linear infinite;
 }
 
 .circleLabel {

@@ -392,7 +392,7 @@ export default function Page() {
   const innerFontSizeE = 10;
   const innerFontSizeF = 9;
   const innerFontSizeG = 8;
-  const innerFontSizeH = 7;
+  const innerFontSizeH = 5;
   // Radii for inner rings computed from outer radius and gaps
   const innerRadiusA = outerRadius - innerGap;
   const innerRadiusB = outerRadius - innerGap * 2;
