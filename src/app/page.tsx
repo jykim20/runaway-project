@@ -370,9 +370,10 @@ export default function Page() {
   } | null>(null);
   const rasterEnabled = true;
   // Base geometry
-  const outerRadius = 420;
-  const padding = 24;
-  const innerGap = 45;
+  const scaleFactor = 0.8;
+  const outerRadius = 420 * scaleFactor;
+  const padding = 24 * scaleFactor;
+  const innerGap = 45 * scaleFactor;
   const ringRotationDegrees = {
     outer: 0,
     innerA: 30,
@@ -385,14 +386,14 @@ export default function Page() {
     innerH: 345
   };
   // Font sizes for inner rings
-  const innerFontSizeA = 16;
-  const innerFontSizeB = 13;
-  const innerFontSizeC = 12;
-  const innerFontSizeD = 11;
-  const innerFontSizeE = 10;
-  const innerFontSizeF = 9;
-  const innerFontSizeG = 8;
-  const innerFontSizeH = 5;
+  const innerFontSizeA = 16 * scaleFactor;
+  const innerFontSizeB = 13 * scaleFactor;
+  const innerFontSizeC = 12 * scaleFactor;
+  const innerFontSizeD = 11 * scaleFactor;
+  const innerFontSizeE = 10 * scaleFactor;
+  const innerFontSizeF = 9 * scaleFactor;
+  const innerFontSizeG = 8 * scaleFactor;
+  const innerFontSizeH = 5 * scaleFactor;
   // Radii for inner rings computed from outer radius and gaps
   const innerRadiusA = outerRadius - innerGap;
   const innerRadiusB = outerRadius - innerGap * 2;

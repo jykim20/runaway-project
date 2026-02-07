@@ -77,8 +77,8 @@ a:hover { text-decoration: none; }
   --circle-size: 520px;
   position: relative;
   z-index: 1;
-  width: var(--circle-size);
-  height: var(--circle-size);
+  width: min(90vmin, var(--circle-size));
+  height: min(90vmin, var(--circle-size));
   display: grid;
   place-items: center;
   contain: layout paint;
@@ -267,7 +267,7 @@ a:hover { text-decoration: none; }
 
 .circleLabel {
   fill: currentColor;
-  font-size: 20px;
+  font-size: 16px;
   letter-spacing: 0.02em;
   opacity: 0.7;
   text-rendering: optimizeSpeed;
