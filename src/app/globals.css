@@ -97,6 +97,20 @@ a:focus { outline: none; }
   pointer-events: auto;
 }
 
+@media (max-width: 640px) {
+  .page {
+    --lyrics-panel-width: 0px;
+    --lyrics-panel-gap: 0px;
+  }
+
+  .lyricsPanel {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70vw;
+  }
+}
+
 .lyricsPanel::-webkit-scrollbar {
   display: none;
 }
