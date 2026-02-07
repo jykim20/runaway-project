@@ -5,13 +5,14 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html, body { height: 100%; overscroll-behavior: none; }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-suisse);
   font-weight: 200;
+  overflow: hidden;
 }
 
 html.noScroll,
