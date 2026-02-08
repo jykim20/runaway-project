@@ -1012,7 +1012,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           <div className="lyricsBody">
             {activeTrack.lyrics.map((line, index) => (
               <p key={`${activeTrack.id}-line-${index}`}>
-                {lyricsScrambleActive ? scrambleLine(line, lyricsScrambleFrame) : line}
+                {lyricsScrambleActive
+                  ? scrambleLine(line ?? "", lyricsScrambleFrame)
+                  : line}
               </p>
             ))}
           </div>
@@ -1031,7 +1033,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             <div className="lyricsBody">
               {activeTrack?.lyrics.map((line, index) => (
                 <p key={`${activeTrack.id}-line-${index}`}>
-                  {lyricsScrambleActive ? scrambleLine(line, lyricsScrambleFrame) : line}
+                  {lyricsScrambleActive
+                    ? scrambleLine(line ?? "", lyricsScrambleFrame)
+                    : line}
                 </p>
               ))}
             </div>
