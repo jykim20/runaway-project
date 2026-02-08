@@ -169,8 +169,8 @@ a:focus { outline: none; }
   top: calc(var(--page-pad, 16px) + 16px);
   left: var(--page-pad, 16px);
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
+  flex-direction: column;
+  gap: 8px;
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
