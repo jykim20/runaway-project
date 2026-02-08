@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   title: "Runaway Project (2025)",
   description: "Xave",
   icons: {
-    icon: "/cover.png"
+    icon: [{ url: "/cover.png", type: "image/png" }],
+    apple: [{ url: "/cover.png", type: "image/png" }],
+    shortcut: ["/cover.png"]
   }
 };
 
