@@ -119,6 +119,7 @@ a:focus { outline: none; }
   font-size: 14px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  margin-top: 0;
   margin-bottom: 12px;
 }
 
@@ -156,11 +157,29 @@ a:focus { outline: none; }
 
 .lyricsGif {
   display: block;
-  width: 100%;
+  width: 70%;
   height: auto;
   margin-top: 12px;
   margin-left: -12px;
   opacity: 0.9;
+}
+
+.streamingLinks {
+  position: fixed;
+  top: calc(var(--page-pad, 16px) + 16px);
+  left: var(--page-pad, 16px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 12;
+}
+
+.streamingLinks a {
+  text-decoration: none;
+  color: #111;
 }
 
 .content {

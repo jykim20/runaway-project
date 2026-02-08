@@ -826,6 +826,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     if (target?.closest?.("[data-ring], .circleLink, .lyricsPanel, .lyricsOverlay")) {
       return;
     }
+    const wrap = circleWrapRef.current;
+    if (wrap && target && wrap.contains(target)) {
+      return;
+    }
     if (autoRevealRunning || revealStage >= ringOrder.length) return;
     setAutoRevealRunning(true);
     let index = revealStage;
@@ -944,6 +948,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const handleBodyClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest(".circleLink")) return;
+      const wrap = circleWrapRef.current;
+      if (wrap && target && wrap.contains(target)) return;
       setZoomTarget(null);
       if (window.location.hash) {
         window.history.replaceState(
@@ -1006,20 +1012,32 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
 
   return (
     <>
-      {activeTrack && zoomTarget && !showOverlay && showLyricsContent && (
-        <aside className="lyricsPanel" aria-live="polite">
-          <div className="lyricsTitle">{activeTrack.title}</div>
-          <div className="lyricsBody">
-            {activeTrack.lyrics.map((line, index) => (
-              <p key={`${activeTrack.id}-line-${index}`}>
-                {lyricsScrambleActive
-                  ? scrambleLine(line ?? "", lyricsScrambleFrame)
-                  : line}
-              </p>
-            ))}
+      {activeTrack && zoomTarget && !showOverlay && (
+        <>
+          <div className="streamingLinks" aria-label="Streaming links">
+            <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify">Spotify</a>
+            <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music">Apple Music</a>
+            <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube">YouTube</a>
+            <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp">Bandcamp</a>
+            <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol">Nina Protocol</a>
+            <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud">SoundCloud</a>
           </div>
-          <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
-        </aside>
+          {showLyricsContent && (
+            <aside className="lyricsPanel" aria-live="polite">
+              <div className="lyricsTitle">{activeTrack.title}</div>
+              <div className="lyricsBody">
+                {activeTrack.lyrics.map((line, index) => (
+                  <p key={`${activeTrack.id}-line-${index}`}>
+                    {lyricsScrambleActive
+                      ? scrambleLine(line ?? "", lyricsScrambleFrame)
+                      : line}
+                  </p>
+                ))}
+              </div>
+              <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
+            </aside>
+          )}
+        </>
       )}
       {showOverlay && showLyricsContent && (
         <div
