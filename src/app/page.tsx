@@ -971,7 +971,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       if (target?.closest(".circleLink")) return;
       if (target?.closest(".lyricsPanel")) return;
       if (target?.closest(".streamingLinks, .streamingStack")) return;
-      if (showCredits || target?.closest(".creditsOverlay")) return;
+      if (showCredits || target?.closest(".creditsOverlay, .creditsContent")) return;
       const wrap = circleWrapRef.current;
       if (wrap && target && wrap.contains(target)) return;
       setZoomTarget(null);
@@ -1128,7 +1128,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           aria-modal="true"
           onClick={() => setShowCredits(false)}
         >
-          <div className="creditsContent">
+          <div
+            className="creditsContent"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="creditsColumn">
               <div className="creditsTitle">Runaway Project (19/12/2025)</div>
               <div className="creditsLine">Mixed &amp; Mastered by Yang Woo Jo</div>
