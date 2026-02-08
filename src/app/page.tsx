@@ -71,14 +71,14 @@ const TrackLabel = memo(function TrackLabel({
 const tracks = [
   {
     id: "safety-guide",
-    title: "Safety Guide",
+    title: "1 Safety Guide",
     lyrics: [
       "{Instrumental}"
     ]
   },
   {
     id: "lock-pick",
-    title: "Lock Pick",
+    title: "2 Lock Pick",
     lyrics: [
       "Every time it doesn't feel right",
       "Wash my face with acid",
@@ -99,7 +99,7 @@ const tracks = [
   },
   {
     id: "have-fun",
-    title: "Have Fun",
+    title: "3 Have Fun",
     lyrics: [
       "(Its going to)",
       "I have a mission Im on my way to star",
@@ -127,7 +127,7 @@ const tracks = [
   },
   {
     id: "off-bones",
-    title: "Off Bones",
+    title: "4 Off Bones",
     lyrics: [
       "Please wake me up when Its over",
       "I'll do the same when Im sober",
@@ -152,7 +152,7 @@ const tracks = [
   },
   {
     id: "eraser",
-    title: "Eraser",
+    title: "5 Eraser",
     lyrics: [
       "Since I meet you I look for something that is true",
       "You can take my everything I never doubt you",
@@ -181,14 +181,14 @@ const tracks = [
   },
   {
     id: "forbidden-fruit",
-    title: "Forbidden Fruit (Interlude)",
+    title: "6 Forbidden Fruit (Interlude)",
     lyrics: [
       "{Instrumental}"
     ]
   },
   {
     id: "helium",
-    title: "Helium",
+    title: "7 Helium",
     lyrics: [
       "Memory breaks like piñata",
       "Don’t care anymore",
@@ -235,7 +235,7 @@ const tracks = [
   },
   {
     id: "afraid",
-    title: "What are you afraid of?",
+    title: "8 What are you afraid of?",
     lyrics: [
       "3 days in London ",
       "Hotel I stay up all night feeling drugs",
@@ -261,7 +261,7 @@ const tracks = [
   },
   {
     id: "seoul",
-    title: "Seoul (Bonus)",
+    title: "9 Seoul (Bonus)",
     lyrics: [
       "{Instrumental}"
     ]
@@ -295,6 +295,7 @@ export default function Page() {
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [lyricsScrambleFrame, setLyricsScrambleFrame] = useState(0);
   const [lyricsScrambleActive, setLyricsScrambleActive] = useState(false);
+  const [showLyricsContent, setShowLyricsContent] = useState(false);
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
     outer: tracks.map((track) => track.title),
     innerA: tracks.map((track) => track.title),
@@ -898,6 +899,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const viewportHeight = window.innerHeight;
     const x = 0 - centerX / targetScale - 100;
     const y = viewportHeight / targetScale - centerY + 80;
+    setShowLyricsContent(false);
     setZoomTarget({ scale: targetScale, x, y });
     if (withHash) {
       window.setTimeout(() => {
@@ -915,6 +917,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       setActiveTrackId(trackId);
       setOverlayOpen(true);
       setZoomTarget(null);
+      setShowLyricsContent(true);
       return;
     }
     zoomToTrack(trackId, true);
@@ -930,6 +933,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       setActiveTrackId(trackId);
       setOverlayOpen(true);
       setZoomTarget(null);
+      setShowLyricsContent(true);
       return;
     }
     zoomToTrack(trackId, false);
@@ -972,7 +976,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       .join("");
 
   useEffect(() => {
-    if (!showLyrics) {
+    if (!showLyricsContent) {
       setLyricsScrambleActive(false);
       setLyricsScrambleFrame(0);
       return;
@@ -992,11 +996,17 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [activeTrackId, showLyrics]);
+  }, [activeTrackId, showLyricsContent]);
+
+  useEffect(() => {
+    if (!showLyrics) {
+      setShowLyricsContent(false);
+    }
+  }, [showLyrics]);
 
   return (
     <>
-      {activeTrack && zoomTarget && !showOverlay && (
+      {activeTrack && zoomTarget && !showOverlay && showLyricsContent && (
         <aside className="lyricsPanel" aria-live="polite">
           <div className="lyricsTitle">{activeTrack.title}</div>
           <div className="lyricsBody">
@@ -1009,7 +1019,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
         </aside>
       )}
-      {showOverlay && (
+      {showOverlay && showLyricsContent && (
         <div
           className="lyricsOverlay"
           role="dialog"
@@ -1039,6 +1049,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           } as CSSProperties
         }
         onClick={handleWhitespaceClick}
+        onTransitionEnd={(event) => {
+          if (event.propertyName === "transform" && zoomTarget) {
+            setShowLyricsContent(true);
+          }
+        }}
       >
         {/* <ParticleLayer className="particleLayer" />   */}
 
