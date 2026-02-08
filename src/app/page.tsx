@@ -969,6 +969,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const handleBodyClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest(".circleLink")) return;
+      if (target?.closest(".streamingLinks, .streamingStack")) return;
       if (showCredits || target?.closest(".creditsOverlay")) return;
       const wrap = circleWrapRef.current;
       if (wrap && target && wrap.contains(target)) return;
@@ -1038,12 +1039,12 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
         <>
           <div className="streamingStack">
             <div className="streamingLinks" aria-label="Streaming links">
-              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify">Spotify</a>
-              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music">Apple Music</a>
-              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube">YouTube</a>
-              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp">Bandcamp</a>
-              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol">Nina Protocol</a>
-              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud">SoundCloud</a>
+              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Spotify</a>
+              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Apple Music</a>
+              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>YouTube</a>
+              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Bandcamp</a>
+              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Nina Protocol</a>
+              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>SoundCloud</a>
             </div>
             <a
               className="streamingCredit"
@@ -1097,13 +1098,25 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             </div>
             <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
             <div className="streamingLinks streamingLinksOverlay" aria-label="Streaming links">
-              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify">Spotify</a>
-              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music">Apple Music</a>
-              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube">YouTube</a>
-              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp">Bandcamp</a>
-              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol">Nina Protocol</a>
-              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud">SoundCloud</a>
+              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Spotify</a>
+              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Apple Music</a>
+              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>YouTube</a>
+              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Bandcamp</a>
+              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Nina Protocol</a>
+              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>SoundCloud</a>
             </div>
+            <a
+              className="streamingCredit streamingCreditOverlay"
+              href="#"
+              aria-label="Credit"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setShowCredits(true);
+              }}
+            >
+              credit
+            </a>
           </div>
         </div>
       )}
@@ -1120,6 +1133,14 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               <div className="creditsLine">Mixed &amp; Mastered by Yang Woo Jo</div>
               <div className="creditsDivider">~</div>
               <div className="creditsLine">Runaway Project 2025 ©</div>
+              <a
+                className="creditsLink"
+                href="/cover.png"
+                target="_blank"
+                rel="noreferrer"
+              >
+                cover
+              </a>
             </div>
             <div className="creditsColumn">
               <div className="creditsSectionTitle">Safety Guide</div>
