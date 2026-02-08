@@ -8,9 +8,7 @@ import {
   useState,
   type CSSProperties,
   type MutableRefObject,
-  type PointerEvent as ReactPointerEvent,
-  type MouseEvent as ReactMouseEvent,
-  type TouchEvent as ReactTouchEvent
+  type MouseEvent as ReactMouseEvent
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
@@ -309,19 +307,8 @@ export default function Page() {
     innerH: tracks.map((track) => track.title)
   }));
   const [scrambleActive, setScrambleActive] = useState(true);
-  const [hoveredLabel, setHoveredLabel] = useState<{
-    ring:
-      | "outer"
-      | "innerA"
-      | "innerB"
-      | "innerC"
-      | "innerD"
-      | "innerE"
-      | "innerF"
-      | "innerG"
-      | "innerH";
-    index: number;
-  } | null>(null);
+  const [revealStage, setRevealStage] = useState(0);
+  const [autoRevealRunning, setAutoRevealRunning] = useState(false);
   const [revealedLabels, setRevealedLabels] = useState(() => ({
     outer: Array(tracks.length).fill(false) as boolean[],
     innerA: Array(tracks.length).fill(false) as boolean[],
@@ -797,38 +784,24 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     title: string
   ) => {
     if (revealedLabels[ring][index]) return title;
-    if (hoveredLabel?.ring === ring && hoveredLabel.index === index) return title;
     return scrambledTitles[ring][index] ?? title;
   };
 
-  const handleRevealTarget = (target: Element | null) => {
-    const ringTarget = target?.closest?.("[data-ring]");
-    if (!ringTarget) {
-      if (hoveredLabel) setHoveredLabel(null);
-      return;
-    }
-    const ring = ringTarget.getAttribute("data-ring") as
-      | "outer"
-      | "innerA"
-      | "innerB"
-      | "innerC"
-      | "innerD"
-      | "innerE"
-      | "innerF"
-      | "innerG"
-      | "innerH"
-      | null;
-    const indexAttr = ringTarget.getAttribute("data-index");
-    const index = indexAttr ? Number(indexAttr) : Number.NaN;
-    if (!ring || Number.isNaN(index)) {
-      if (hoveredLabel) setHoveredLabel(null);
-      return;
-    }
-    if (!hoveredLabel || hoveredLabel.ring !== ring || hoveredLabel.index !== index) {
-      setHoveredLabel({ ring, index });
-    }
+  const ringOrder: RingKey[] = [
+    "outer",
+    "innerA",
+    "innerB",
+    "innerC",
+    "innerD",
+    "innerE",
+    "innerF",
+    "innerG",
+    "innerH"
+  ];
+
+  const revealRing = (ring: RingKey) => {
     setRevealedLabels((prev) => {
-      if (prev[ring][index]) return prev;
+      if (prev[ring].every(Boolean)) return prev;
       const next = {
         outer: [...prev.outer],
         innerA: [...prev.innerA],
@@ -840,47 +813,34 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
         innerG: [...prev.innerG],
         innerH: [...prev.innerH]
       };
-      next[ring][index] = true;
+      next[ring] = next[ring].map(() => true);
       revealedLabelsRef.current = next;
       return next;
     });
   };
 
-  const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-    const element = document.elementFromPoint(event.clientX, event.clientY);
-    handleRevealTarget(element);
-  };
-
-  const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (event.pointerType === "touch") {
-      event.currentTarget.setPointerCapture(event.pointerId);
+  const handleWhitespaceClick = (event: ReactMouseEvent<HTMLElement>) => {
+    if (showOverlay) return;
+    const target = event.target as Element | null;
+    if (target?.closest?.("[data-ring], .circleLink, .lyricsPanel, .lyricsOverlay")) {
+      return;
     }
-    handleRevealTarget(event.target as Element | null);
-  };
-
-  const handlePointerUp = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (event.pointerType === "touch") {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  };
-
-  const handleTouchAtPoint = (clientX: number, clientY: number) => {
-    const element = document.elementFromPoint(clientX, clientY);
-    handleRevealTarget(element);
-  };
-
-  const handleTouchStart = (event: ReactTouchEvent<SVGSVGElement>) => {
-    event.preventDefault();
-    const touch = event.touches[0];
-    if (!touch) return;
-    handleTouchAtPoint(touch.clientX, touch.clientY);
-  };
-
-  const handleTouchMove = (event: ReactTouchEvent<SVGSVGElement>) => {
-    event.preventDefault();
-    const touch = event.touches[0];
-    if (!touch) return;
-    handleTouchAtPoint(touch.clientX, touch.clientY);
+    if (autoRevealRunning || revealStage >= ringOrder.length) return;
+    setAutoRevealRunning(true);
+    let index = revealStage;
+    revealRing(ringOrder[index]);
+    index += 1;
+    setRevealStage(index);
+    const intervalId = window.setInterval(() => {
+      if (index >= ringOrder.length) {
+        window.clearInterval(intervalId);
+        setAutoRevealRunning(false);
+        return;
+      }
+      revealRing(ringOrder[index]);
+      index += 1;
+      setRevealStage(index);
+    }, 260);
   };
 
   const resetScramble = () => {
@@ -897,7 +857,8 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     };
     revealedLabelsRef.current = nextRevealed;
     setRevealedLabels(nextRevealed);
-    setHoveredLabel(null);
+    setRevealStage(0);
+    setAutoRevealRunning(false);
     setScrambledTitles({
       outer: SCRAMBLE_FRAMES.map((frames) => frames[0]),
       innerA: SCRAMBLE_FRAMES.map((frames) => frames[0]),
@@ -1077,6 +1038,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             "--zoom-y": zoomTarget ? `${zoomTarget.y}px` : "0px"
           } as CSSProperties
         }
+        onClick={handleWhitespaceClick}
       >
         {/* <ParticleLayer className="particleLayer" />   */}
 
@@ -1176,15 +1138,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             className="circleSvg"
             viewBox={`0 0 ${size} ${size}`}
             aria-hidden="true"
-            onPointerMove={handlePointerMove}
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            style={{ touchAction: "none" }}
-            onMouseLeave={() => setHoveredLabel(null)}
-            onPointerLeave={() => setHoveredLabel(null)}
           >
             <defs>
               <path
@@ -1237,6 +1190,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       data-ring="outer"
                       data-index={index}
                       onClick={(event) => handleOuterClick(event, track.id)}
+                      style={{
+                        pointerEvents: revealedLabels.outer[index] ? "auto" : "none"
+                      }}
+                      aria-disabled={!revealedLabels.outer[index]}
                     >
                       <TrackLabel
                         className="circleLabel"
@@ -1284,7 +1241,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerA", index, track.title)}
                           hrefId="#trackCirclePathInnerA"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerA[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1304,7 +1265,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerB", index, track.title)}
                           hrefId="#trackCirclePathInnerB"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerB[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1324,7 +1289,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerC", index, track.title)}
                           hrefId="#trackCirclePathInnerC"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerC[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1344,7 +1313,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerD", index, track.title)}
                           hrefId="#trackCirclePathInnerD"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerD[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1364,7 +1337,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerE", index, track.title)}
                           hrefId="#trackCirclePathInnerE"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerE[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1384,7 +1361,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerF", index, track.title)}
                           hrefId="#trackCirclePathInnerF"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerF[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1404,7 +1385,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerG", index, track.title)}
                           hrefId="#trackCirclePathInnerG"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerG[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
@@ -1424,7 +1409,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           displayText={getDisplayTitle("innerH", index, track.title)}
                           hrefId="#trackCirclePathInnerH"
                           startOffset={offset}
-                          onClick={(event) => handleInnerClick(event, track.id)}
+                          onClick={
+                            revealedLabels.innerH[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
                         />
                       );
                     })}
