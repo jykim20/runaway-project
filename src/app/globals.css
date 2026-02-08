@@ -184,11 +184,15 @@ a:focus { outline: none; }
 }
 
 .streamingLinks a {
+  display: inline-block;
+  width: fit-content;
   text-decoration: none;
   color: #111;
 }
 
 .streamingCredit {
+  display: inline-block;
+  width: fit-content;
   font-size: 13px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -203,7 +207,7 @@ a:focus { outline: none; }
 
 .streamingCreditOverlay {
   position: static;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .creditsOverlay {
@@ -270,6 +274,17 @@ a:focus { outline: none; }
   margin: 12px 0;
   font-size: 12px;
   letter-spacing: 0.2em;
+}
+
+@media (max-width: 640px) {
+  .creditsContent {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .creditsColumn {
+    min-width: 0;
+  }
 }
 
 .content {
