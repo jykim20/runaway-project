@@ -969,6 +969,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const handleBodyClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest(".circleLink")) return;
+      if (target?.closest(".lyricsPanel")) return;
       if (target?.closest(".streamingLinks, .streamingStack")) return;
       if (showCredits || target?.closest(".creditsOverlay")) return;
       const wrap = circleWrapRef.current;
