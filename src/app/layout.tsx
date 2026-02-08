@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Runaway Project (2025)",
   description: "Xave",
+  icons: {
+    icon: "/cover.png"
+  }
 };
 
 export default function RootLayout({
