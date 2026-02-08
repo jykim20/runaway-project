@@ -268,6 +268,12 @@ const tracks = [
   }
 ];
 
+const getCircleTitle = (title: string) =>
+  title.replace(/^\s*\d+\s*[-.)]?\s*/u, "");
+
+const getLyricsTitle = (title: string) =>
+  title.replace(/^\s*(\d+)\s*([.)-]?\s*)?/u, "$1. ");
+
 const SCRAMBLE_FRAMES = tracks.map((track) =>
   Array.from({ length: SCRAMBLE_VARIANTS }, () => scrambleText(track.title))
 );
@@ -296,16 +302,17 @@ export default function Page() {
   const [lyricsScrambleFrame, setLyricsScrambleFrame] = useState(0);
   const [lyricsScrambleActive, setLyricsScrambleActive] = useState(false);
   const [showLyricsContent, setShowLyricsContent] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
-    outer: tracks.map((track) => track.title),
-    innerA: tracks.map((track) => track.title),
-    innerB: tracks.map((track) => track.title),
-    innerC: tracks.map((track) => track.title),
-    innerD: tracks.map((track) => track.title),
-    innerE: tracks.map((track) => track.title),
-    innerF: tracks.map((track) => track.title),
-    innerG: tracks.map((track) => track.title),
-    innerH: tracks.map((track) => track.title)
+    outer: tracks.map((track) => getCircleTitle(track.title)),
+    innerA: tracks.map((track) => getCircleTitle(track.title)),
+    innerB: tracks.map((track) => getCircleTitle(track.title)),
+    innerC: tracks.map((track) => getCircleTitle(track.title)),
+    innerD: tracks.map((track) => getCircleTitle(track.title)),
+    innerE: tracks.map((track) => getCircleTitle(track.title)),
+    innerF: tracks.map((track) => getCircleTitle(track.title)),
+    innerG: tracks.map((track) => getCircleTitle(track.title)),
+    innerH: tracks.map((track) => getCircleTitle(track.title))
   }));
   const [scrambleActive, setScrambleActive] = useState(true);
   const [revealStage, setRevealStage] = useState(0);
@@ -428,31 +435,49 @@ export default function Page() {
   const segmentPercent = 100 / displayedTracks.length;
   const buildScrambledStateFromFrame = (frame: number) => ({
     outer: tracks.map((track, index) =>
-      revealedLabelsRef.current.outer[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.outer[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerA: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerA[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerA[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerB: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerB[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerB[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerC: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerC[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerC[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerD: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerD[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerD[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerE: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerE[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerE[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerF: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerF[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerF[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerG: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerG[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerG[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     ),
     innerH: tracks.map((track, index) =>
-      revealedLabelsRef.current.innerH[index] ? track.title : SCRAMBLE_FRAMES[index][frame]
+      revealedLabelsRef.current.innerH[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
     )
   });
 
@@ -482,9 +507,9 @@ export default function Page() {
         let changed = false;
         const next = { ...prev };
         if (updateOuter) {
-          const nextOuter = tracks.map((track, index) =>
-            revealed.outer[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
-          );
+        const nextOuter = tracks.map((track, index) =>
+          revealed.outer[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+        );
           if (prev.outer.join("") !== nextOuter.join("")) {
             next.outer = nextOuter;
             changed = true;
@@ -492,28 +517,28 @@ export default function Page() {
         }
         if (updateInner) {
           const nextInnerA = tracks.map((track, index) =>
-            revealed.innerA[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerA[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerB = tracks.map((track, index) =>
-            revealed.innerB[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerB[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerC = tracks.map((track, index) =>
-            revealed.innerC[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerC[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerD = tracks.map((track, index) =>
-            revealed.innerD[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerD[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerE = tracks.map((track, index) =>
-            revealed.innerE[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerE[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerF = tracks.map((track, index) =>
-            revealed.innerF[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerF[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerG = tracks.map((track, index) =>
-            revealed.innerG[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerG[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           const nextInnerH = tracks.map((track, index) =>
-            revealed.innerH[index] ? track.title : SCRAMBLE_FRAMES[index][frameIndex]
+            revealed.innerH[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
           );
           if (prev.innerA.join("") !== nextInnerA.join("")) {
             next.innerA = nextInnerA;
@@ -823,11 +848,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   const handleWhitespaceClick = (event: ReactMouseEvent<HTMLElement>) => {
     if (showOverlay) return;
     const target = event.target as Element | null;
-    if (target?.closest?.("[data-ring], .circleLink, .lyricsPanel, .lyricsOverlay")) {
-      return;
-    }
-    const wrap = circleWrapRef.current;
-    if (wrap && target && wrap.contains(target)) {
+    if (target?.closest?.(".lyricsPanel, .lyricsOverlay")) {
       return;
     }
     if (autoRevealRunning || revealStage >= ringOrder.length) return;
@@ -865,15 +886,15 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     setRevealStage(0);
     setAutoRevealRunning(false);
     setScrambledTitles({
-      outer: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerA: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerB: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerC: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerD: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerE: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerF: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerG: SCRAMBLE_FRAMES.map((frames) => frames[0]),
-      innerH: SCRAMBLE_FRAMES.map((frames) => frames[0])
+      outer: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerA: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerB: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerC: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerD: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerE: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerF: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerG: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerH: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title))
     });
   };
 
@@ -948,6 +969,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const handleBodyClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest(".circleLink")) return;
+      if (showCredits || target?.closest(".creditsOverlay")) return;
       const wrap = circleWrapRef.current;
       if (wrap && target && wrap.contains(target)) return;
       setZoomTarget(null);
@@ -963,7 +985,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     return () => {
       document.removeEventListener("click", handleBodyClick);
     };
-  }, [zoomTarget]);
+  }, [zoomTarget, showCredits]);
 
   const activeTrack = activeTrackId
     ? tracks.find((track) => track.id === activeTrackId)
@@ -1014,17 +1036,31 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     <>
       {activeTrack && zoomTarget && !showOverlay && (
         <>
-          <div className="streamingLinks" aria-label="Streaming links">
-            <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify">Spotify</a>
-            <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music">Apple Music</a>
-            <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube">YouTube</a>
-            <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp">Bandcamp</a>
-            <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol">Nina Protocol</a>
-            <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud">SoundCloud</a>
+          <div className="streamingStack">
+            <div className="streamingLinks" aria-label="Streaming links">
+              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify">Spotify</a>
+              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music">Apple Music</a>
+              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube">YouTube</a>
+              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp">Bandcamp</a>
+              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol">Nina Protocol</a>
+              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud">SoundCloud</a>
+            </div>
+            <a
+              className="streamingCredit"
+              href="#"
+              aria-label="Credit"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setShowCredits(true);
+              }}
+            >
+              credit
+            </a>
           </div>
           {showLyricsContent && (
             <aside className="lyricsPanel" aria-live="polite">
-              <div className="lyricsTitle">{activeTrack.title}</div>
+              <div className="lyricsTitle">{getLyricsTitle(activeTrack.title)}</div>
               <div className="lyricsBody">
                 {activeTrack.lyrics.map((line, index) => (
                   <p key={`${activeTrack.id}-line-${index}`}>
@@ -1047,7 +1083,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
           onClick={() => setOverlayOpen(false)}
         >
           <div className="lyricsOverlayContent">
-            <div className="lyricsTitle">{activeTrack?.title}</div>
+            <div className="lyricsTitle">
+              {activeTrack?.title ? getLyricsTitle(activeTrack.title) : ""}
+            </div>
             <div className="lyricsBody">
               {activeTrack?.lyrics.map((line, index) => (
                 <p key={`${activeTrack.id}-line-${index}`}>
@@ -1058,6 +1096,57 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               ))}
             </div>
             <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
+            <div className="streamingLinks streamingLinksOverlay" aria-label="Streaming links">
+              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify">Spotify</a>
+              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music">Apple Music</a>
+              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube">YouTube</a>
+              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp">Bandcamp</a>
+              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol">Nina Protocol</a>
+              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud">SoundCloud</a>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCredits && (
+        <div
+          className="creditsOverlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowCredits(false)}
+        >
+          <div className="creditsContent">
+            <div className="creditsColumn">
+              <div className="creditsTitle">Runaway Project (19/12/2025)</div>
+              <div className="creditsLine">Mixed &amp; Mastered by Yang Woo Jo</div>
+              <div className="creditsDivider">~</div>
+              <div className="creditsLine">Runaway Project 2025 ©</div>
+            </div>
+            <div className="creditsColumn">
+              <div className="creditsSectionTitle">Safety Guide</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <div className="creditsSectionTitle">Lock Pick</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Have Fun</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Off Bones</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Eraser</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Forbidden Fruit (interlude)</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Helium feat. jinnin</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong, Jimin Lee</div>
+              <div className="creditsSectionTitle">What are you afraid of?</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Seoul (Bonus)</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+            </div>
           </div>
         </div>
       )}
@@ -1234,7 +1323,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                     >
                       <TrackLabel
                         className="circleLabel"
-                        displayText={getDisplayTitle("outer", index, track.title)}
+                          displayText={getDisplayTitle("outer", index, getCircleTitle(track.title))}
                         hrefId="#trackCirclePathOuter"
                         startOffset={offset}
                       />
@@ -1275,7 +1364,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerA"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerA", index, track.title)}
+                            displayText={getDisplayTitle("innerA", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerA"
                           startOffset={offset}
                           onClick={
@@ -1299,7 +1388,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerB"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerB", index, track.title)}
+                            displayText={getDisplayTitle("innerB", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerB"
                           startOffset={offset}
                           onClick={
@@ -1323,7 +1412,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerC"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerC", index, track.title)}
+                            displayText={getDisplayTitle("innerC", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerC"
                           startOffset={offset}
                           onClick={
@@ -1347,7 +1436,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerD"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerD", index, track.title)}
+                            displayText={getDisplayTitle("innerD", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerD"
                           startOffset={offset}
                           onClick={
@@ -1371,7 +1460,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerE"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerE", index, track.title)}
+                            displayText={getDisplayTitle("innerE", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerE"
                           startOffset={offset}
                           onClick={
@@ -1395,7 +1484,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerF"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerF", index, track.title)}
+                            displayText={getDisplayTitle("innerF", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerF"
                           startOffset={offset}
                           onClick={
@@ -1419,7 +1508,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerG"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerG", index, track.title)}
+                            displayText={getDisplayTitle("innerG", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerG"
                           startOffset={offset}
                           onClick={
@@ -1443,7 +1532,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           className="circleLabel circleLabelInner circleLink"
                           dataRing="innerH"
                           dataIndex={index}
-                          displayText={getDisplayTitle("innerH", index, track.title)}
+                            displayText={getDisplayTitle("innerH", index, getCircleTitle(track.title))}
                           hrefId="#trackCirclePathInnerH"
                           startOffset={offset}
                           onClick={
