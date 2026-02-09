@@ -902,10 +902,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   ) => {
     // First click zooms the whole ring; second click follows the hash.
     event.preventDefault();
-    if (zoomTarget) {
-      window.location.hash = trackId;
-      return;
-    }
     const wrap = circleWrapRef.current;
     if (!wrap) return;
     const rect = wrap.getBoundingClientRect();
