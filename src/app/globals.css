@@ -222,7 +222,7 @@ a:focus { outline: none; }
 }
 
 .creditsContent {
-  width: min(720px, 79vw);
+  width: min(540px, 66vw);
   max-height: 88svh;
   overflow-y: auto;
   display: flex;
