@@ -1186,7 +1186,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               <div className="creditsLine">written by Jiwoo Hong</div>
               <div className="creditsSectionTitle">Seoul (Bonus)</div>
               <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
-              <div className="creditsSectionTitle">Cover</div>
               <a
                 className="creditsLink"
                 href="/cover.png"
@@ -1195,6 +1194,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               >
                 cover
               </a>
+              <div className="creditsLine">Runaway Project 2025 ©</div>
             </div>
           </div>
         </div>
