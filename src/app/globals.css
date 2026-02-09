@@ -229,8 +229,6 @@ a:focus { outline: none; }
   gap: 32px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  align-items: flex-start;
-  justify-content: flex-start;
 }
 
 .creditsContent::-webkit-scrollbar {
@@ -240,7 +238,6 @@ a:focus { outline: none; }
 .creditsColumn {
   flex: 1;
   min-width: 220px;
-  text-align: left;
 }
 
 .creditsTitle {
@@ -271,10 +268,6 @@ a:focus { outline: none; }
   text-transform: none;
   color: #111;
   text-decoration: none;
-}
-
-.creditsLinkSection {
-  margin-top: 12px;
 }
 
 .creditsDivider {
