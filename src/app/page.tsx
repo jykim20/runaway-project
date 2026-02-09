@@ -1160,16 +1160,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             <div className="creditsColumn">
               <div className="creditsTitle">Runaway Project (19/12/2025)</div>
               <div className="creditsLine">Mixed &amp; Mastered by Yang Woo Jo</div>
-              <div className="creditsDivider">~</div>
-              <div className="creditsLine">Runaway Project 2025 ©</div>
-              <a
-                className="creditsLink"
-                href="/cover.png"
-                target="_blank"
-                rel="noreferrer"
-              >
-                cover
-              </a>
             </div>
             <div className="creditsColumn">
               <div className="creditsSectionTitle">Safety Guide</div>
@@ -1196,6 +1186,14 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               <div className="creditsLine">written by Jiwoo Hong</div>
               <div className="creditsSectionTitle">Seoul (Bonus)</div>
               <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <a
+                className="creditsLink"
+                href="/cover.png"
+                target="_blank"
+                rel="noreferrer"
+              >
+                cover
+              </a>
             </div>
           </div>
         </div>
