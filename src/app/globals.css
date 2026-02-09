@@ -251,13 +251,13 @@ a:focus { outline: none; }
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-top: 8px;
-  margin-bottom: 4px;
+  margin-top: 14px;
+  margin-bottom: 6px;
 }
 
 .creditsLine {
   font-size: 12px;
-  line-height: 1.05;
+  line-height: 1.3;
 }
 
 .creditsLink {
@@ -271,7 +271,7 @@ a:focus { outline: none; }
 }
 
 .creditsDivider {
-  margin: 8px 0;
+  margin: 12px 0;
   font-size: 12px;
   letter-spacing: 0.2em;
 }
