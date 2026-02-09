@@ -8,30 +8,82 @@ import {
   useState,
   type CSSProperties,
   type MutableRefObject,
-  type PointerEvent as ReactPointerEvent
+  type MouseEvent as ReactMouseEvent
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
-let cachedFontData: string | null = null;
-const textLengthCache = new Map<string, number>();
+const ASCII_CHARS = Array.from({ length: 94 }, (_, i) => String.fromCharCode(33 + i)).join("");
+const SCRAMBLE_SYMBOLS = "!@#$%^&*+-=?:;<>[]{}~";
+const SCRAMBLE_VARIANTS = 24;
 
-// Track metadata used to render ring labels and link targets.
+const scrambleText = (text: string) =>
+  text
+    .split("")
+    .map((char) =>
+      char === " " ? " " : SCRAMBLE_SYMBOLS[Math.floor(Math.random() * SCRAMBLE_SYMBOLS.length)]
+    )
+    .join("");
+
+type RingKey =
+  | "outer"
+  | "innerA"
+  | "innerB"
+  | "innerC"
+  | "innerD"
+  | "innerE"
+  | "innerF"
+  | "innerG"
+  | "innerH";
+
+type TrackLabelProps = {
+  className: string;
+  dataRing?: RingKey;
+  dataIndex?: number;
+  displayText: string;
+  hrefId: string;
+  startOffset: string | number;
+  onClick?: (event: ReactMouseEvent<SVGTextElement>) => void;
+};
+
+const TrackLabel = memo(function TrackLabel({
+  className,
+  dataRing,
+  dataIndex,
+  displayText,
+  hrefId,
+  startOffset,
+  onClick
+}: TrackLabelProps) {
+  return (
+    <text
+      className={className}
+      data-ring={dataRing}
+      data-index={dataIndex}
+      onClick={onClick}
+    >
+      <textPath href={hrefId} startOffset={startOffset}>
+        {displayText}
+      </textPath>
+    </text>
+  );
+});
+
 const tracks = [
   {
     id: "safety-guide",
-    title: "Safety Guide",
+    title: "1 Safety Guide",
     lyrics: [
       "{Instrumental}"
     ]
   },
   {
     id: "lock-pick",
-    title: "Lock Pick",
+    title: "2 Lock Pick",
     lyrics: [
       "Every time it doesn't feel right",
       "Wash my face with acid",
       "This time I know it should be fine",
-      "All alone I know Im gonna be alright",
+      "All alone I know I’m gonna be alright",
       "~",
       "Trees waving at me do a high-five",
       "Do you miss me I missed you",
@@ -47,10 +99,10 @@ const tracks = [
   },
   {
     id: "have-fun",
-    title: "Have Fun",
+    title: "3 Have Fun",
     lyrics: [
-      "(Its going to)",
-      "I have a mission Im on my way to star",
+      "(It’s going to)",
+      "I have a mission I’m on my way to star",
       "I have a mission I gotta have some fun",
       "I gotta have some fun",
       "(I gotta have some fun)",
@@ -59,25 +111,27 @@ const tracks = [
       "Guilty pleasure that’s nothing",
       "(Nothing in to nothing)",
       "This is my last time",
-      "Its not gonna happen twice",
+      "It’s not gonna happen twice",
       "This is my secret escapade",
       "You should keep this to my grave",
-      "Is this what you want",
-      "Is this what you want",
+      "(Is this what you want)",
+      "(Is this what you want)",
       "Rocket pills are not fun is not fun (anymore)",
       "White powders are not fun is not fun anymore",
       "Something feels wrong",
       "Something feels wrong",
       "~",
-      "I have a mission Im on my way to star",
-      "I have a mission I gotta have some fun"
+      "I have a mission I’m on my way to star",
+      "I have a mission I gotta have some fun",
+      "I gotta have some fun",
+      "(I gotta have some fun)",
     ]
   },
   {
     id: "off-bones",
-    title: "Off Bones",
+    title: "4 Off Bones",
     lyrics: [
-      "Please wake me up when Its over",
+      "Please wake me up when it’s over",
       "I'll do the same when Im sober",
       "I'll do the same x3",
       "Last time when I wake up",
@@ -88,20 +142,25 @@ const tracks = [
       "Run away from this hell",
       "Last time when I wake up",
       "Wake up x3",
-      "Its loop",
+      "It’s loop",
       "~",
-      "Maybe its not what I expected",
+      "Maybe it’s not what I expected",
       "(Can’t handle this no more)",
       "I need somebody to help me",
       "Tearing my skin off bones",
+      "Off bones, off bones",
+      "(Off bones - Off bones)",
+      "Tearing my skin off bones",
+      "Off bones, off bones",
       "(Off bones - Off bones)",
       "~"
     ]
   },
   {
     id: "eraser",
-    title: "Eraser",
+    title: "5 Eraser",
     lyrics: [
+      "(It’s going to)",
       "Since I meet you I look for something that is true",
       "You can take my everything I never doubt you",
       "Blurry on my mind Silver Color I seek clues",
@@ -115,28 +174,38 @@ const tracks = [
       "You can use me",
       "You can hurt me",
       "But be careful not to lose me",
-      "x2",
+      "You can use me",
+      "You can hurt me",
+      "But be careful not to lose me",
       "(Not to lose me x2)",
       "~",
       "Mixed emotions I have it in my pocket x2",
+      "~",
       "You can use me",
       "You can hurt me",
       "But be careful not to lose me",
       "You can use me",
-      "You can hurt me",,
+      "You can hurt me",
+      "(You can hurt me x2)",
+      "~",
+      "Since I meet you I look for something that is true",
+      "You can take my everything I never doubt you",
+      "Blurry on my mind Silver Color I seek clues",
+      "(Silver color I seek clues x2)",
+      "(It’s going to)",
       "~"
     ]
   },
   {
     id: "forbidden-fruit",
-    title: "Forbidden Fruit (Interlude)",
+    title: "6 Forbidden Fruit (Interlude)",
     lyrics: [
       "{Instrumental}"
     ]
   },
   {
     id: "helium",
-    title: "Helium",
+    title: "7 Helium",
     lyrics: [
       "Memory breaks like piñata",
       "Don’t care anymore",
@@ -164,13 +233,15 @@ const tracks = [
       "Just like a diver who’s ready for more",
       "~",
       "Lost it the second I had it all",
-      "Lost in the memories can I carry on",
+      "Lost in the memories I carry on",
       "Do you really know me if you weren’t really there x2",
-      "I can't take this damage over you",
+      "I can’t take this damage over you",
       "I can’t take this loss over you",
-      "Double necklace, I think you know what it means x2",
+      "(loss over you x2)",
+      "(Double necklace, I think you know what it means x2)",
       "I'm just tryna peel it off",
       "She played me dirty, so I play it worse",
+      "(worse, worse)",
       "Feel like helium",
       "Floating too high, unmixed, alien",
       "~",
@@ -178,17 +249,20 @@ const tracks = [
       "The scales will tip two times",
       "So baby, I’m not your savior, maybe",
       "Fatal kind of mercy",
-      "I’ll rewrite the last line"
+      "I’ll rewrite the last line",
+      "(It’s going to)"
     ]
   },
   {
     id: "afraid",
-    title: "What are you afraid of?",
+    title: "8 What are you afraid of?",
     lyrics: [
-      "3 days in London ",
+      "(It’s going to)",
+      "3 days in London",
       "Hotel I stay up all night feeling drugs",
-      "x2",
-      "Im running in circles",
+      "3 days in London",
+      "Hotel I stay up all night feeling drugs",
+      "I’m running in circles",
       "running in circles",
       "running in circles",
       "We are running in circles",
@@ -196,72 +270,43 @@ const tracks = [
       "running in circles",
       "There’s something I can’t tell",
       "But you know its been this way",
-      "You can fill up  voids with my voice",
-      "So what are you afraid of?",
+      "You can fill up voids with my voice",
+      "“So what are you afraid of?“",
       "~",
       "Please take care of me when",
-      "every time I fall back “its  okay“",
-      "x2",
-      "(It's okay x3)",
-      "Please  take care of me x4",
+      "every time I fall back “its okay“",
+      "Please take care of me when",
+      "every time I fall back “its okay“",
+      "It’s okay",
+      "It’s okay",
+      "It’s okay",
+      "Please take care of me x4",
       "~"
     ]
   },
   {
     id: "seoul",
-    title: "Seoul (Bonus)",
+    title: "9 Seoul (Bonus)",
     lyrics: [
       "{Instrumental}"
     ]
   }
 ];
 
-type InnerRingKey =
-  | "innerA"
-  | "innerB"
-  | "innerC"
-  | "innerD"
-  | "innerE"
-  | "innerF"
-  | "innerG"
-  | "innerH";
+const getCircleTitle = (title: string) =>
+  title.replace(/^\s*\d+\s*[-.)]?\s*/u, "");
 
-const InnerRing = memo(function InnerRing({
-  ringKey,
-  className,
-  pathId,
-  offsets,
-  titles,
-  displayedTracks,
-  segmentPercent
-}: {
-  ringKey: InnerRingKey;
-  className: string;
-  pathId: string;
-  offsets: number[];
-  titles: string[];
-  displayedTracks: typeof tracks;
-  segmentPercent: number;
-}) {
-  return (
-    <g className={`circleGroup ${className}`}>
-      {displayedTracks.map((track, index) => {
-        const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-        const offset = offsets[index] ?? fallbackOffset;
-        return (
-          <text key={`${track.id}-${ringKey}`} className="circleLabel circleLabelInner">
-            <textPath href={pathId} startOffset={offset}>
-              {titles[index] ?? track.title}
-            </textPath>
-          </text>
-        );
-      })}
-    </g>
-  );
-});
+const getLyricsTitle = (title: string) =>
+  title.replace(/^\s*(\d+)\s*([.)-]?\s*)?/u, "$1. ");
+
+const SCRAMBLE_FRAMES = tracks.map((track) =>
+  Array.from({ length: SCRAMBLE_VARIANTS }, () => scrambleText(track.title))
+);
+
 
 export default function Page() {
-  // Computed startOffset values for each ring's <textPath> elements.
+  // React state arrays that hold the computed startOffset values for each ring's <textPath> elements
+  // offsetsOuter is an array of numbers for the outer ring. Each entry matches a track and represents where along the path its label should start. 
   const [offsetsOuter, setOffsetsOuter] = useState<number[]>([]);
   const [offsetsInnerA, setOffsetsInnerA] = useState<number[]>([]);
   const [offsetsInnerB, setOffsetsInnerB] = useState<number[]>([]);
@@ -271,64 +316,32 @@ export default function Page() {
   const [offsetsInnerF, setOffsetsInnerF] = useState<number[]>([]);
   const [offsetsInnerG, setOffsetsInnerG] = useState<number[]>([]);
   const [offsetsInnerH, setOffsetsInnerH] = useState<number[]>([]);
-  // When set, the whole page scales/pans to zoom into the circle for focus.
   const [zoomTarget, setZoomTarget] = useState<{
     scale: number;
     x: number;
     y: number;
   } | null>(null);
-  // Scrambled titles (per ring) are swapped for real titles once revealed/hovered.
+  const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [lyricsScrambleFrame, setLyricsScrambleFrame] = useState(0);
+  const [lyricsScrambleActive, setLyricsScrambleActive] = useState(false);
+  const [showLyricsContent, setShowLyricsContent] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
-    outer: tracks.map((track) => track.title),
-    innerA: tracks.map((track) => track.title),
-    innerB: tracks.map((track) => track.title),
-    innerC: tracks.map((track) => track.title),
-    innerD: tracks.map((track) => track.title),
-    innerE: tracks.map((track) => track.title),
-    innerF: tracks.map((track) => track.title),
-    innerG: tracks.map((track) => track.title),
-    innerH: tracks.map((track) => track.title)
+    outer: tracks.map((track) => getCircleTitle(track.title)),
+    innerA: tracks.map((track) => getCircleTitle(track.title)),
+    innerB: tracks.map((track) => getCircleTitle(track.title)),
+    innerC: tracks.map((track) => getCircleTitle(track.title)),
+    innerD: tracks.map((track) => getCircleTitle(track.title)),
+    innerE: tracks.map((track) => getCircleTitle(track.title)),
+    innerF: tracks.map((track) => getCircleTitle(track.title)),
+    innerG: tracks.map((track) => getCircleTitle(track.title)),
+    innerH: tracks.map((track) => getCircleTitle(track.title))
   }));
   const [scrambleActive, setScrambleActive] = useState(true);
-  const lastInteractionRef = useRef<number>(Date.now());
-  const [showAllRings, setShowAllRings] = useState(false);
-  const [revealProgressOuter, setRevealProgressOuter] = useState(
-    () => Array(tracks.length).fill(0) as number[]
-  );
-  const revealInFlightOuterRef = useRef<Array<boolean>>(
-    Array(tracks.length).fill(false)
-  );
-  // Current hover target used to reveal the label temporarily.
-  const [hoveredLabel, setHoveredLabel] = useState<{
-    ring:
-      | "outer"
-      | "innerA"
-      | "innerB"
-      | "innerC"
-      | "innerD"
-      | "innerE"
-      | "innerF"
-      | "innerG"
-      | "innerH";
-    index: number;
-  } | null>(null);
-  const zoomTargetRef = useRef<typeof zoomTarget>(null);
-  const hoveredLabelRef = useRef<{
-    ring:
-      | "outer"
-      | "innerA"
-      | "innerB"
-      | "innerC"
-      | "innerD"
-      | "innerE"
-      | "innerF"
-      | "innerG"
-      | "innerH";
-    index: number;
-  } | null>(null);
-  const pendingHoverRef = useRef<typeof hoveredLabel>(null);
-  const hoverRafRef = useRef<number | null>(null);
-  // Permanent reveal state (set on hover) to stop scrambling for that label.
+  const [revealStage, setRevealStage] = useState(0);
+  const [autoRevealRunning, setAutoRevealRunning] = useState(false);
   const [revealedLabels, setRevealedLabels] = useState(() => ({
     outer: Array(tracks.length).fill(false) as boolean[],
     innerA: Array(tracks.length).fill(false) as boolean[],
@@ -340,12 +353,10 @@ export default function Page() {
     innerG: Array(tracks.length).fill(false) as boolean[],
     innerH: Array(tracks.length).fill(false) as boolean[]
   }));
-  // Keep a ref so the scramble interval reads the latest revealed state.
   const revealedLabelsRef = useRef(revealedLabels);
   useEffect(() => {
     const body = document.body;
     const root = document.documentElement;
-    // Lock page scrolling while zoomed.
     if (zoomTarget) {
       body.classList.add("noScroll");
       root.classList.add("noScroll");
@@ -358,7 +369,26 @@ export default function Page() {
       root.classList.remove("noScroll");
     };
   }, [zoomTarget]);
-  // Refs for <textPath> nodes per ring so text lengths can be measured.
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 640px)");
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+    } else {
+      media.addListener(handleChange);
+    }
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener("change", handleChange);
+      } else {
+        media.removeListener(handleChange);
+      }
+    };
+  }, []);
+  // Refs for <textPath> nodes per ring so text lengths can be measured
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerBRefs = useRef<Array<SVGTextPathElement | null>>([]);
@@ -369,8 +399,16 @@ export default function Page() {
   const innerGRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerHRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const outerMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerAMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerBMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerCMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerDMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerEMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerFMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerGMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerHMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const circleWrapRef = useRef<HTMLDivElement | null>(null);
-  // State for rasterized SVG layers (inner A-H) used for performance.
+  // State for rasterized SVG layers (inner A/B/C)
   const svgRef = useRef<SVGSVGElement | null>(null);
   const fontDataRef = useRef<string | null>(null);
   const [rasterLayers, setRasterLayers] = useState<{
@@ -384,20 +422,32 @@ export default function Page() {
     innerH: string;
   } | null>(null);
   const rasterEnabled = true;
-  // Base geometry for the outer ring.
-  const outerRadius = 420;
-  const padding = 24;
-  const innerGap = 45;
-  // Font sizes for inner rings.
-  const innerFontSizeA = 16;
-  const innerFontSizeB = 13;
-  const innerFontSizeC = 12;
-  const innerFontSizeD = 11;
-  const innerFontSizeE = 10;
-  const innerFontSizeF = 9;
-  const innerFontSizeG = 8;
-  const innerFontSizeH = 7;
-  // Radii for inner rings computed from outer radius and gaps.
+  // Base geometry
+  const scaleFactor = 0.8;
+  const outerRadius = 420 * scaleFactor;
+  const padding = 24 * scaleFactor;
+  const innerGap = 45 * scaleFactor;
+  const ringRotationDegrees = {
+    outer: 0,
+    innerA: 30,
+    innerB: 75,
+    innerC: 120,
+    innerD: 165,
+    innerE: 210,
+    innerF: 255,
+    innerG: 300,
+    innerH: 345
+  };
+  // Font sizes for inner rings
+  const innerFontSizeA = 16 * scaleFactor;
+  const innerFontSizeB = 13 * scaleFactor;
+  const innerFontSizeC = 12 * scaleFactor;
+  const innerFontSizeD = 11 * scaleFactor;
+  const innerFontSizeE = 10 * scaleFactor;
+  const innerFontSizeF = 9 * scaleFactor;
+  const innerFontSizeG = 8 * scaleFactor;
+  const innerFontSizeH = 5 * scaleFactor;
+  // Radii for inner rings computed from outer radius and gaps
   const innerRadiusA = outerRadius - innerGap;
   const innerRadiusB = outerRadius - innerGap * 2;
   const innerRadiusC = outerRadius - innerGap * 3;
@@ -408,156 +458,182 @@ export default function Page() {
   const innerRadiusH = outerRadius - innerGap * 8;
   const displayedTracks = tracks;
   const segmentPercent = 100 / displayedTracks.length;
+  const buildScrambledStateFromFrame = (frame: number) => ({
+    outer: tracks.map((track, index) =>
+      revealedLabelsRef.current.outer[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerA: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerA[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerB: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerB[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerC: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerC[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerD: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerD[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerE: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerE[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerF: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerF[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerG: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerG[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    ),
+    innerH: tracks.map((track, index) =>
+      revealedLabelsRef.current.innerH[index]
+        ? getCircleTitle(track.title)
+        : SCRAMBLE_FRAMES[index][frame]
+    )
+  });
 
   useEffect(() => {
     revealedLabelsRef.current = revealedLabels;
   }, [revealedLabels]);
 
   useEffect(() => {
-    hoveredLabelRef.current = hoveredLabel;
-  }, [hoveredLabel]);
-
-  useEffect(() => {
-    zoomTargetRef.current = zoomTarget;
-  }, [zoomTarget]);
-
-  useEffect(() => {
-    return () => {
-      if (hoverRafRef.current !== null) {
-        cancelAnimationFrame(hoverRafRef.current);
-      }
-    };
+    return () => {};
   }, []);
 
   useEffect(() => {
+    if (overlayOpen && isMobile) return;
+    const scrambleInterval = 90;
+    const outerPattern = [true];
+    const innerPattern = [true];
+    setScrambleActive(true);
+    setRasterLayers(null);
     let rafId: number | null = null;
-    if (typeof (window as typeof window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === "function") {
-      const id = (window as typeof window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(() => {
-        setShowAllRings(true);
-      });
-      return () => {
-        if (typeof (window as typeof window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback === "function") {
-          (window as typeof window & { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(id);
+    let lastTime = 0;
+    let tick = 0;
+    let frame = 0;
+
+    const pushFrame = (frameIndex: number, updateOuter: boolean, updateInner: boolean) => {
+      const revealed = revealedLabelsRef.current;
+      setScrambledTitles((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        if (updateOuter) {
+        const nextOuter = tracks.map((track, index) =>
+          revealed.outer[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+        );
+          if (prev.outer.join("") !== nextOuter.join("")) {
+            next.outer = nextOuter;
+            changed = true;
+          }
         }
-      };
-    }
-    rafId = requestAnimationFrame(() => {
-      setShowAllRings(true);
-    });
+        if (updateInner) {
+          const nextInnerA = tracks.map((track, index) =>
+            revealed.innerA[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerB = tracks.map((track, index) =>
+            revealed.innerB[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerC = tracks.map((track, index) =>
+            revealed.innerC[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerD = tracks.map((track, index) =>
+            revealed.innerD[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerE = tracks.map((track, index) =>
+            revealed.innerE[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerF = tracks.map((track, index) =>
+            revealed.innerF[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerG = tracks.map((track, index) =>
+            revealed.innerG[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          const nextInnerH = tracks.map((track, index) =>
+            revealed.innerH[index] ? getCircleTitle(track.title) : SCRAMBLE_FRAMES[index][frameIndex]
+          );
+          if (prev.innerA.join("") !== nextInnerA.join("")) {
+            next.innerA = nextInnerA;
+            changed = true;
+          }
+          if (prev.innerB.join("") !== nextInnerB.join("")) {
+            next.innerB = nextInnerB;
+            changed = true;
+          }
+          if (prev.innerC.join("") !== nextInnerC.join("")) {
+            next.innerC = nextInnerC;
+            changed = true;
+          }
+          if (prev.innerD.join("") !== nextInnerD.join("")) {
+            next.innerD = nextInnerD;
+            changed = true;
+          }
+          if (prev.innerE.join("") !== nextInnerE.join("")) {
+            next.innerE = nextInnerE;
+            changed = true;
+          }
+          if (prev.innerF.join("") !== nextInnerF.join("")) {
+            next.innerF = nextInnerF;
+            changed = true;
+          }
+          if (prev.innerG.join("") !== nextInnerG.join("")) {
+            next.innerG = nextInnerG;
+            changed = true;
+          }
+          if (prev.innerH.join("") !== nextInnerH.join("")) {
+            next.innerH = nextInnerH;
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    };
+
+    const step = (now: number) => {
+      if (!lastTime) lastTime = now;
+      if (!document.hidden && now - lastTime >= scrambleInterval) {
+        lastTime = now;
+        frame = (frame + 1) % SCRAMBLE_VARIANTS;
+        tick += 1;
+        pushFrame(
+          frame,
+          outerPattern[tick % outerPattern.length],
+          innerPattern[tick % innerPattern.length]
+        );
+      }
+      rafId = requestAnimationFrame(step);
+    };
+
+    pushFrame(frame, true, true);
+    rafId = requestAnimationFrame(step);
+
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, []);
-
-  useEffect(() => {
-    // Scramble titles continuously until revealed.
-    const symbols = "!@#$%^&*+-=?:;<>[]{}~";
-    const scrambleInterval = 150;
-    const idleTimeoutMs = 6000;
-    setScrambleActive(true);
-    setRasterLayers(null);
-    let intervalId: number | null = null;
-    let ringCursor = 0;
-
-    const scrambleText = (text: string) =>
-      text
-        .split("")
-        .map((char) => (char === " " ? " " : symbols[Math.floor(Math.random() * symbols.length)]))
-        .join("");
-
-    const ringOrder = [
-      "outer",
-      "innerA",
-      "innerB",
-      "innerC",
-      "innerD",
-      "innerE",
-      "innerF",
-      "innerG",
-      "innerH"
-    ] as const;
-    type RingKey = (typeof ringOrder)[number];
-    const getRingNext = (ring: RingKey, revealed: typeof revealedLabelsRef.current) =>
-      tracks.map((track, index) =>
-        revealed[ring][index] ? track.title : scrambleText(track.title)
-      );
-
-    const updateTitles = () => {
-      if (zoomTargetRef.current) return;
-      const now = Date.now();
-      if (now - lastInteractionRef.current > idleTimeoutMs) return;
-      const revealed = revealedLabelsRef.current;
-      const allRevealed = Object.values(revealed).every((ring) =>
-        ring.every(Boolean)
-      );
-      if (allRevealed) return;
-      const ringA = ringOrder[ringCursor % ringOrder.length];
-      const ringB = ringOrder[(ringCursor + 1) % ringOrder.length];
-      ringCursor = (ringCursor + 2) % ringOrder.length;
-
-      setScrambledTitles((prev) => {
-        const next = { ...prev };
-        next[ringA] = getRingNext(ringA, revealed);
-        if (ringB !== ringA) {
-          next[ringB] = getRingNext(ringB, revealed);
-        }
-        const same =
-          prev.outer.join("") === next.outer.join("") &&
-          prev.innerA.join("") === next.innerA.join("") &&
-          prev.innerB.join("") === next.innerB.join("") &&
-          prev.innerC.join("") === next.innerC.join("") &&
-          prev.innerD.join("") === next.innerD.join("") &&
-          prev.innerE.join("") === next.innerE.join("") &&
-          prev.innerF.join("") === next.innerF.join("") &&
-          prev.innerG.join("") === next.innerG.join("") &&
-          prev.innerH.join("") === next.innerH.join("");
-        return same ? prev : next;
-      });
-    };
-
-    const start = () => {
-      if (intervalId !== null) return;
-      intervalId = window.setInterval(updateTitles, scrambleInterval);
-      updateTitles();
-    };
-    const stop = () => {
-      if (intervalId === null) return;
-      window.clearInterval(intervalId);
-      intervalId = null;
-    };
-
-    const handleVisibility = () => {
-      if (document.hidden) stop();
-      else start();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    start();
-    updateTitles();
-
-    return () => {
-      stop();
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, []);
+  }, [overlayOpen, isMobile]);
 
   useLayoutEffect(() => {
-    // Measure label lengths and compute evenly spaced start offsets around a ring.
+    // Measure label lengths and compute evenly spaced start offsets around a ring
     const computeOffsetsForRadius = (
       refs: MutableRefObject<Array<SVGTextPathElement | null>>,
       radius: number
     ) => {
-      const lengths = refs.current.map((node) => {
-        if (!node) return 0;
-        const text = node.textContent ?? "";
-        const fontSize = window.getComputedStyle(node).fontSize;
-        const key = `${text}|${fontSize}`;
-        const cached = textLengthCache.get(key);
-        if (cached !== undefined) return cached;
-        const length = node.getComputedTextLength();
-        textLengthCache.set(key, length);
-        return length;
-      });
+      const lengths = refs.current.map((node) =>
+        node ? node.getComputedTextLength() : 0
+      );
       if (lengths.some((length) => length === 0)) return null;
 
       const circumference = 2 * Math.PI * radius;
@@ -571,17 +647,44 @@ export default function Page() {
       });
     };
 
-    // Computes and stores the startOffset arrays for each ring.
+    // computes and stores the startOffset arrays for each ring
     const computeOffsets = () => {
       const nextOuter = computeOffsetsForRadius(outerMeasureRefs, outerRadius);
       if (!nextOuter) return;
+      if (rasterLayers) {
+        setOffsetsOuter(nextOuter);
+        return;
+      }
+      const nextInnerA = computeOffsetsForRadius(innerAMeasureRefs, innerRadiusA);
+      const nextInnerB = computeOffsetsForRadius(innerBMeasureRefs, innerRadiusB);
+      const nextInnerC = computeOffsetsForRadius(innerCMeasureRefs, innerRadiusC);
+      const nextInnerD = computeOffsetsForRadius(innerDMeasureRefs, innerRadiusD);
+      const nextInnerE = computeOffsetsForRadius(innerEMeasureRefs, innerRadiusE);
+      const nextInnerF = computeOffsetsForRadius(innerFMeasureRefs, innerRadiusF);
+      const nextInnerG = computeOffsetsForRadius(innerGMeasureRefs, innerRadiusG);
+      const nextInnerH = computeOffsetsForRadius(innerHMeasureRefs, innerRadiusH);
+      if (
+        !nextInnerA ||
+        !nextInnerB ||
+        !nextInnerC ||
+        !nextInnerD ||
+        !nextInnerE ||
+        !nextInnerF ||
+        !nextInnerG ||
+        !nextInnerH
+      ) return;
       setOffsetsOuter(nextOuter);
-
-      // Inner rings use fixed percent offsets (no text-length measurement).
+      setOffsetsInnerA(nextInnerA);
+      setOffsetsInnerB(nextInnerB);
+      setOffsetsInnerC(nextInnerC);
+      setOffsetsInnerD(nextInnerD);
+      setOffsetsInnerE(nextInnerE);
+      setOffsetsInnerF(nextInnerF);
+      setOffsetsInnerG(nextInnerG);
+      setOffsetsInnerH(nextInnerH);
     };
 
-    // Schedules offset calculation at the right time and cleans up.
-    // Waits for layout + fonts to settle before measuring text lengths.
+    // Schedules offset calculation at the right time and cleans up. Waits for the layout and fonts to fully settled before measuring text lengths (fonts and SVG paths can take an extra frame to resolve)
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(computeOffsets);
     });
@@ -601,11 +704,10 @@ export default function Page() {
     innerRadiusG,
     innerRadiusH,
     outerRadius,
-    rasterLayers,
-    showAllRings
+    rasterLayers
   ]);
 
-  // Reset rasterized inner ring images when any inner font size changes.
+  // Resets the rasterized inner ring images whenever any inner font size changes
   useEffect(() => {
     setRasterLayers(null);
   }, [
@@ -619,18 +721,25 @@ export default function Page() {
     innerFontSizeH
   ]);
 
-  // Rasterize the inner rings into images once the SVG is ready and text offsets are computed.
+  // Rasterizes the inner rings into images once the SVG is ready and text offsets are computed
   useEffect(() => {
     if (!rasterEnabled) return;
     if (scrambleActive) return;
     if (rasterLayers) return;
     if (!svgRef.current) return;
-    if (!offsetsOuter.length) return;
+    if (
+      !offsetsInnerA.length ||
+      !offsetsInnerB.length ||
+      !offsetsInnerC.length ||
+      !offsetsInnerD.length ||
+      !offsetsInnerE.length ||
+      !offsetsInnerF.length ||
+      !offsetsInnerG.length ||
+      !offsetsInnerH.length
+    ) return;
 
     const serializer = new XMLSerializer();
     const ensureFont = async () => {
-      // Inline the font so the rasterized SVGs render correctly as images.
-      if (cachedFontData) return cachedFontData;
       if (fontDataRef.current) return fontDataRef.current;
       const res = await fetch("/fonts/SuisseIntl-Thin.otf");
       const buffer = await res.arrayBuffer();
@@ -640,13 +749,11 @@ export default function Page() {
         binary += String.fromCharCode(b);
       });
       const base64 = btoa(binary);
-      cachedFontData = base64;
       fontDataRef.current = base64;
       return base64;
     };
 
     const buildLayer = async (className: string) => {
-      // Clone the SVG and keep only a single ring to create a focused layer.
       const clone = svgRef.current!.cloneNode(true) as SVGSVGElement;
       clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       const wraps = clone.querySelectorAll(".circleGroupWrap");
@@ -683,7 +790,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
 
     let isCancelled = false;
     const run = async () => {
-      // Build 8 ring images in parallel.
       const [innerA, innerB, innerC, innerD, innerE, innerF, innerG, innerH] = await Promise.all([
         buildLayer("circleGroupInnerA"),
         buildLayer("circleGroupInnerB"),
@@ -697,65 +803,24 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       if (isCancelled) return;
       setRasterLayers({ innerA, innerB, innerC, innerD, innerE, innerF, innerG, innerH });
     };
-    if (typeof (window as typeof window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === "function") {
-      const id = (window as typeof window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
-      return () => {
-        isCancelled = true;
-        if (typeof (window as typeof window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback === "function") {
-          (window as typeof window & { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(id);
-        }
-      };
-    }
     run();
     return () => {
       isCancelled = true;
     };
   }, [
-    offsetsOuter.length,
+    offsetsInnerA.length,
+    offsetsInnerB.length,
+    offsetsInnerC.length,
+    offsetsInnerD.length,
+    offsetsInnerE.length,
+    offsetsInnerF.length,
+    offsetsInnerG.length,
+    offsetsInnerH.length,
     rasterLayers,
     scrambleActive
   ]);
 
-  const startOuterReveal = (index: number) => {
-    if (revealInFlightOuterRef.current[index]) return;
-    revealInFlightOuterRef.current[index] = true;
-    const titleLength = tracks[index]?.title?.length ?? 0;
-    if (titleLength === 0) {
-      revealInFlightOuterRef.current[index] = false;
-      return;
-    }
-    let lastTime = performance.now();
-    const charIntervalMs = 10000;
-    const tick = (now: number) => {
-      const delta = now - lastTime;
-      lastTime = now;
-      setRevealProgressOuter((prev) => {
-        const next = [...prev];
-        const current = next[index] ?? 0;
-        const increment = Math.max(1, Math.floor(delta / charIntervalMs));
-        const updated = Math.min(titleLength, current + increment);
-        next[index] = updated;
-        if (updated >= titleLength) {
-          revealInFlightOuterRef.current[index] = false;
-          setRevealedLabels((prevLabels) => {
-            if (prevLabels.outer[index]) return prevLabels;
-            const nextLabels = { ...prevLabels, outer: [...prevLabels.outer] };
-            nextLabels.outer[index] = true;
-            revealedLabelsRef.current = nextLabels;
-            return nextLabels;
-          });
-          return next;
-        }
-        return next;
-      });
-      if (revealInFlightOuterRef.current[index]) {
-        requestAnimationFrame(tick);
-      }
-    };
-    requestAnimationFrame(tick);
-  };
-
-  const markRevealed = (
+  const getDisplayTitle = (
     ring:
       | "outer"
       | "innerA"
@@ -766,14 +831,28 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       | "innerF"
       | "innerG"
       | "innerH",
-    index: number
+    index: number,
+    title: string
   ) => {
-    if (ring === "outer") {
-      startOuterReveal(index);
-      return;
-    }
+    if (revealedLabels[ring][index]) return title;
+    return scrambledTitles[ring][index] ?? title;
+  };
+
+  const ringOrder: RingKey[] = [
+    "outer",
+    "innerA",
+    "innerB",
+    "innerC",
+    "innerD",
+    "innerE",
+    "innerF",
+    "innerG",
+    "innerH"
+  ];
+
+  const revealRing = (ring: RingKey) => {
     setRevealedLabels((prev) => {
-      if (prev[ring][index]) return prev;
+      if (prev[ring].every(Boolean)) return prev;
       const next = {
         outer: [...prev.outer],
         innerA: [...prev.innerA],
@@ -785,79 +864,38 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
         innerG: [...prev.innerG],
         innerH: [...prev.innerH]
       };
-      next[ring][index] = true;
+      next[ring] = next[ring].map(() => true);
       revealedLabelsRef.current = next;
       return next;
     });
   };
 
-  const scheduleHoverUpdate = (
-    next:
-      | {
-          ring:
-            | "outer"
-            | "innerA"
-            | "innerB"
-            | "innerC"
-            | "innerD"
-            | "innerE"
-            | "innerF"
-            | "innerG"
-            | "innerH";
-          index: number;
-        }
-      | null
-  ) => {
-    pendingHoverRef.current = next;
-    if (hoverRafRef.current !== null) return;
-    hoverRafRef.current = requestAnimationFrame(() => {
-      hoverRafRef.current = null;
-      const pending = pendingHoverRef.current;
-      const current = hoveredLabelRef.current;
-      if (
-        pending?.ring === current?.ring &&
-        pending?.index === current?.index
-      ) {
+  const handleWhitespaceClick = (event: ReactMouseEvent<HTMLElement>) => {
+    if (showOverlay) return;
+    const target = event.target as Element | null;
+    if (target?.closest?.(".lyricsPanel, .lyricsOverlay")) {
+      return;
+    }
+    if (autoRevealRunning || revealStage >= ringOrder.length) return;
+    setAutoRevealRunning(true);
+    let index = revealStage;
+    revealRing(ringOrder[index]);
+    index += 1;
+    setRevealStage(index);
+    const intervalId = window.setInterval(() => {
+      if (index >= ringOrder.length) {
+        window.clearInterval(intervalId);
+        setAutoRevealRunning(false);
         return;
       }
-      setHoveredLabel(pending);
-      if (pending) {
-        markRevealed(pending.ring, pending.index);
-      }
-    });
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-    // Resolve which ring/label is under the pointer and update reveal state.
-    lastInteractionRef.current = Date.now();
-    const target = (event.target as Element | null)?.closest?.("[data-ring]");
-    if (!target) {
-      scheduleHoverUpdate(null);
-      return;
-    }
-    const ring = target.getAttribute("data-ring") as
-      | "outer"
-      | "innerA"
-      | "innerB"
-      | "innerC"
-      | "innerD"
-      | "innerE"
-      | "innerF"
-      | "innerG"
-      | "innerH"
-      | null;
-    const indexAttr = target.getAttribute("data-index");
-    const index = indexAttr ? Number(indexAttr) : Number.NaN;
-    if (!ring || Number.isNaN(index)) {
-      scheduleHoverUpdate(null);
-      return;
-    }
-    scheduleHoverUpdate({ ring, index });
+      revealRing(ringOrder[index]);
+      index += 1;
+      setRevealStage(index);
+    }, 260);
   };
 
   const resetScramble = () => {
-    // Return all labels to scrambled state.
-    setRevealedLabels({
+    const nextRevealed = {
       outer: Array(tracks.length).fill(false),
       innerA: Array(tracks.length).fill(false),
       innerB: Array(tracks.length).fill(false),
@@ -867,43 +905,39 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       innerF: Array(tracks.length).fill(false),
       innerG: Array(tracks.length).fill(false),
       innerH: Array(tracks.length).fill(false)
-    });
-    setHoveredLabel(null);
-    setRevealProgressOuter(Array(tracks.length).fill(0));
-    revealInFlightOuterRef.current = Array(tracks.length).fill(false);
+    };
+    revealedLabelsRef.current = nextRevealed;
+    setRevealedLabels(nextRevealed);
+    setRevealStage(0);
+    setAutoRevealRunning(false);
     setScrambledTitles({
-      outer: tracks.map((track) => track.title),
-      innerA: tracks.map((track) => track.title),
-      innerB: tracks.map((track) => track.title),
-      innerC: tracks.map((track) => track.title),
-      innerD: tracks.map((track) => track.title),
-      innerE: tracks.map((track) => track.title),
-      innerF: tracks.map((track) => track.title),
-      innerG: tracks.map((track) => track.title),
-      innerH: tracks.map((track) => track.title)
+      outer: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerA: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerB: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerC: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerD: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerE: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerF: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerG: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title)),
+      innerH: SCRAMBLE_FRAMES.map((frames, index) => frames[0] ?? getCircleTitle(tracks[index].title))
     });
   };
 
   const size = outerRadius * 2 + padding * 2;
-  const needsMeasure = offsetsOuter.length !== displayedTracks.length;
-
-  const getOuterDisplayTitle = (index: number, fallback: string) => {
-    const title = tracks[index]?.title ?? fallback;
-    const scrambled = scrambledTitles.outer[index] ?? title;
-    const progress = revealProgressOuter[index] ?? 0;
-    if (progress <= 0) return scrambled;
-    if (progress >= title.length) return title;
-    return `${title.slice(0, progress)}${scrambled.slice(progress)}`;
+  const center = outerRadius + padding;
+  const circlePath = (radius: number, angleDeg: number) => {
+    const theta = (angleDeg * Math.PI) / 180;
+    const startX = center + radius * Math.cos(theta);
+    const startY = center + radius * Math.sin(theta);
+    const dx = -2 * radius * Math.cos(theta);
+    const dy = -2 * radius * Math.sin(theta);
+    return `M ${startX},${startY} a ${radius},${radius} 0 1,1 ${dx},${dy} a ${radius},${radius} 0 1,1 ${-dx},${-dy}`;
   };
 
-  const handleOuterClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    trackId: string
-  ) => {
-    // First click zooms the whole ring; second click follows the hash.
-    event.preventDefault();
+  const zoomToTrack = (trackId: string, withHash: boolean) => {
+    setActiveTrackId(trackId);
     if (zoomTarget) {
-      window.location.hash = trackId;
+      if (withHash) window.location.hash = trackId;
       return;
     }
     const wrap = circleWrapRef.current;
@@ -913,20 +947,58 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const centerY = rect.top + rect.height / 2;
     const targetScale = 1.35;
     const viewportHeight = window.innerHeight;
-    const x = 0 - centerX / targetScale;
-    const y = viewportHeight / targetScale - centerY;
+    const x = 0 - centerX / targetScale - 100;
+    const y = viewportHeight / targetScale - centerY + 80;
+    setShowLyricsContent(false);
     setZoomTarget({ scale: targetScale, x, y });
-    window.setTimeout(() => {
-      window.location.hash = trackId;
-    }, 820);
+    if (withHash) {
+      window.setTimeout(() => {
+        window.location.hash = trackId;
+      }, 820);
+    }
+  };
+
+  const handleOuterClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    trackId: string
+  ) => {
+    event.preventDefault();
+    if (isMobile) {
+      setActiveTrackId(trackId);
+      setOverlayOpen(true);
+      setZoomTarget(null);
+      setShowLyricsContent(true);
+      return;
+    }
+    zoomToTrack(trackId, true);
+  };
+
+  const handleInnerClick = (
+    event: ReactMouseEvent<SVGTextElement>,
+    trackId: string
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isMobile) {
+      setActiveTrackId(trackId);
+      setOverlayOpen(true);
+      setZoomTarget(null);
+      setShowLyricsContent(true);
+      return;
+    }
+    zoomToTrack(trackId, false);
   };
 
   useEffect(() => {
-    // Click outside the circle to exit zoom and clear hash.
     if (!zoomTarget) return;
     const handleBodyClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest(".circleLink")) return;
+      if (target?.closest(".lyricsPanel")) return;
+      if (target?.closest(".streamingLinks, .streamingStack")) return;
+      if (showCredits || target?.closest(".creditsOverlay, .creditsContent")) return;
+      const wrap = circleWrapRef.current;
+      if (wrap && target && wrap.contains(target)) return;
       setZoomTarget(null);
       if (window.location.hash) {
         window.history.replaceState(
@@ -940,22 +1012,212 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     return () => {
       document.removeEventListener("click", handleBodyClick);
     };
-  }, [zoomTarget]);
+  }, [zoomTarget, showCredits]);
+
+  const activeTrack = activeTrackId
+    ? tracks.find((track) => track.id === activeTrackId)
+    : null;
+  const showOverlay = Boolean(isMobile && overlayOpen && activeTrack);
+  const showLyrics = Boolean(activeTrack && (zoomTarget || showOverlay));
+
+  const scrambleLine = (line: string, frame: number) =>
+    line
+      .split("")
+      .map((char, index) => {
+        if (char === " ") return " ";
+        const seed = (char.charCodeAt(0) + index * 13 + frame * 31) % SCRAMBLE_SYMBOLS.length;
+        return SCRAMBLE_SYMBOLS[seed];
+      })
+      .join("");
+
+  useEffect(() => {
+    if (!showLyricsContent) {
+      setLyricsScrambleActive(false);
+      setLyricsScrambleFrame(0);
+      return;
+    }
+    let frame = 0;
+    setLyricsScrambleActive(true);
+    setLyricsScrambleFrame(0);
+    const intervalId = window.setInterval(() => {
+      frame += 1;
+      if (frame >= 12) {
+        setLyricsScrambleActive(false);
+        window.clearInterval(intervalId);
+        return;
+      }
+      setLyricsScrambleFrame(frame);
+    }, 60);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [activeTrackId, showLyricsContent]);
+
+  useEffect(() => {
+    if (!showLyrics) {
+      setShowLyricsContent(false);
+    }
+  }, [showLyrics]);
 
   return (
-    <main
-      className={`page${zoomTarget ? " pageZoomed" : ""}`}
-      style={
-        {
-          "--zoom-scale": zoomTarget?.scale ?? 1,
-          "--zoom-x": zoomTarget ? `${zoomTarget.x}px` : "0px",
-          "--zoom-y": zoomTarget ? `${zoomTarget.y}px` : "0px"
-        } as CSSProperties
-      }
-    >
-      {/* <ParticleLayer className="particleLayer" /> */}
+    <>
+      {activeTrack && zoomTarget && !showOverlay && (
+        <>
+          <div className="streamingStack">
+            <div className="streamingLinks" aria-label="Streaming links">
+              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Spotify</a>
+              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Apple Music</a>
+              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>YouTube</a>
+              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Bandcamp</a>
+              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Nina Protocol</a>
+              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>SoundCloud</a>
+            </div>
+            <a
+              className="streamingCredit"
+              href="#"
+              aria-label="Credit"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setShowCredits(true);
+              }}
+            >
+              credit
+            </a>
+          </div>
+          {showLyricsContent && (
+            <aside className="lyricsPanel" aria-live="polite">
+              <div className="lyricsTitle">{getLyricsTitle(activeTrack.title)}</div>
+              <div className="lyricsBody">
+                {activeTrack.lyrics.map((line, index) => (
+                  <p key={`${activeTrack.id}-line-${index}`}>
+                    {lyricsScrambleActive
+                      ? scrambleLine(line ?? "", lyricsScrambleFrame)
+                      : line}
+                  </p>
+                ))}
+              </div>
+              <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
+            </aside>
+          )}
+        </>
+      )}
+      {showOverlay && showLyricsContent && (
+        <div
+          className="lyricsOverlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOverlayOpen(false)}
+        >
+          <div className="lyricsOverlayContent">
+            <div className="lyricsTitle">
+              {activeTrack?.title ? getLyricsTitle(activeTrack.title) : ""}
+            </div>
+            <div className="lyricsBody">
+              {activeTrack?.lyrics.map((line, index) => (
+                <p key={`${activeTrack.id}-line-${index}`}>
+                  {lyricsScrambleActive
+                    ? scrambleLine(line ?? "", lyricsScrambleFrame)
+                    : line}
+                </p>
+              ))}
+            </div>
+            <img className="lyricsGif" src="/gifs/butterfly2.gif" alt="" />
+            <div className="streamingLinks streamingLinksOverlay" aria-label="Streaming links">
+              <a href="https://open.spotify.com/album/1r7LsYEkCa4ZxtezhMZcWS?si=yNDHo3BJTgSZgQvhqq_lrg" aria-label="Spotify" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Spotify</a>
+              <a href="https://music.apple.com/kr/album/runaway-project/1862149571?l=en-GB" aria-label="Apple Music" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Apple Music</a>
+              <a href="https://www.youtube.com/playlist?list=OLAK5uy_mqTTMcmSBpe1nKKgVa6-Eia6rWF_4cqww" aria-label="YouTube" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>YouTube</a>
+              <a href="https://xave2001.bandcamp.com/album/runaway-project" aria-label="Bandcamp" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Bandcamp</a>
+              <a href="https://www.ninaprotocol.com/profiles/xave?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnmOZS3G4-1BjrUQJyq4SJ_AWANf1vdQRpAJNPFwxNFhnwqHKpjlyJtWbMU9o_aem_0gq60vaW8VwOSZGdqqb5Uw&tab=releases&page=1&sort=desc" aria-label="Nina Protocol" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Nina Protocol</a>
+              <a href="https://soundcloud.com/carenotcure" aria-label="SoundCloud" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>SoundCloud</a>
+            </div>
+            <a
+              className="streamingCredit streamingCreditOverlay"
+              href="#"
+              aria-label="Credit"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setShowCredits(true);
+              }}
+            >
+              credit
+            </a>
+          </div>
+        </div>
+      )}
+      {showCredits && (
+        <div
+          className="creditsOverlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowCredits(false)}
+        >
+          <div
+            className="creditsContent"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="creditsColumn">
+              <div className="creditsLine">Mixed &amp; Mastered by Yang Woo Jo</div>
+              <div className="creditsDivider">~</div>
+              <div className="creditsLine">Runaway Project 2025 ©</div>
+            </div>
+            <div className="creditsColumn">
+              <div className="creditsSectionTitle">Safety Guide</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <div className="creditsSectionTitle">Lock Pick</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Have Fun</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Off Bones</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Eraser</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Forbidden Fruit (interlude)</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Helium feat. jinnin</div>
+              <div className="creditsLine">produced by Jiwoo Hong</div>
+              <div className="creditsLine">written by Jiwoo Hong, Jimin Lee</div>
+              <div className="creditsSectionTitle">What are you afraid of?</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <div className="creditsLine">written by Jiwoo Hong</div>
+              <div className="creditsSectionTitle">Seoul (Bonus)</div>
+              <div className="creditsLine">produced by Jiwoo Hong, Tae Hyung Koo</div>
+              <a
+                className="creditsLink creditsLinkSection"
+                href="/cover.png"
+                target="_blank"
+                rel="noreferrer"
+              >
+                cover
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+      <main
+        className={`page${zoomTarget ? " pageZoomed" : ""}${showOverlay ? " pagePaused" : ""}`}
+        style={
+          {
+            "--zoom-scale": zoomTarget?.scale ?? 1,
+            "--zoom-x": zoomTarget ? `${zoomTarget.x}px` : "0px",
+            "--zoom-y": zoomTarget ? `${zoomTarget.y}px` : "0px"
+          } as CSSProperties
+        }
+        onClick={handleWhitespaceClick}
+        onTransitionEnd={(event) => {
+          if (event.propertyName === "transform" && zoomTarget) {
+            setShowLyricsContent(true);
+          }
+        }}
+      >
+        {/* <ParticleLayer className="particleLayer" />   */}
 
-      <div className="layout">
+        {!showOverlay && <div className="layout">
         <div
           ref={circleWrapRef}
           className="circleWrap"
@@ -970,7 +1232,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               "--inner-font-size-f": `${innerFontSizeF}px`,
               "--inner-font-size-g": `${innerFontSizeG}px`,
               "--inner-font-size-h": `${innerFontSizeH}px`
-            } as CSSProperties
+            } as CSSProperties // 
           }
         >
           {/* <div
@@ -987,7 +1249,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             <span className="centerYear">(2025)</span>
           </div> */}
           {rasterLayers && (
-            // When rasterized, draw image layers instead of live SVG text.
             <div className="rasterStack" aria-hidden="true">
               <div
                 className="rasterLayerWrap circleGroupWrap"
@@ -1052,53 +1313,48 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             className="circleSvg"
             viewBox={`0 0 ${size} ${size}`}
             aria-hidden="true"
-            onPointerMove={handlePointerMove}
-            onMouseLeave={() => setHoveredLabel(null)}
-            onPointerLeave={() => setHoveredLabel(null)}
           >
             <defs>
-              {/* Path definitions for each ring; labels follow these circles. */}
               <path
                 id="trackCirclePathOuter"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${outerRadius},0 a ${outerRadius},${outerRadius} 0 1,1 ${outerRadius * 2},0 a ${outerRadius},${outerRadius} 0 1,1 -${outerRadius * 2},0`}
+                d={circlePath(outerRadius, ringRotationDegrees.outer)}
               />
               <path
                 id="trackCirclePathInnerA"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusA},0 a ${innerRadiusA},${innerRadiusA} 0 1,1 ${innerRadiusA * 2},0 a ${innerRadiusA},${innerRadiusA} 0 1,1 -${innerRadiusA * 2},0`}
+                d={circlePath(innerRadiusA, ringRotationDegrees.innerA)}
               />
               <path
                 id="trackCirclePathInnerB"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusB},0 a ${innerRadiusB},${innerRadiusB} 0 1,1 ${innerRadiusB * 2},0 a ${innerRadiusB},${innerRadiusB} 0 1,1 -${innerRadiusB * 2},0`}
+                d={circlePath(innerRadiusB, ringRotationDegrees.innerB)}
               />
               <path
                 id="trackCirclePathInnerC"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusC},0 a ${innerRadiusC},${innerRadiusC} 0 1,1 ${innerRadiusC * 2},0 a ${innerRadiusC},${innerRadiusC} 0 1,1 -${innerRadiusC * 2},0`}
+                d={circlePath(innerRadiusC, ringRotationDegrees.innerC)}
               />
               <path
                 id="trackCirclePathInnerD"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusD},0 a ${innerRadiusD},${innerRadiusD} 0 1,1 ${innerRadiusD * 2},0 a ${innerRadiusD},${innerRadiusD} 0 1,1 -${innerRadiusD * 2},0`}
+                d={circlePath(innerRadiusD, ringRotationDegrees.innerD)}
               />
               <path
                 id="trackCirclePathInnerE"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusE},0 a ${innerRadiusE},${innerRadiusE} 0 1,1 ${innerRadiusE * 2},0 a ${innerRadiusE},${innerRadiusE} 0 1,1 -${innerRadiusE * 2},0`}
+                d={circlePath(innerRadiusE, ringRotationDegrees.innerE)}
               />
               <path
                 id="trackCirclePathInnerF"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusF},0 a ${innerRadiusF},${innerRadiusF} 0 1,1 ${innerRadiusF * 2},0 a ${innerRadiusF},${innerRadiusF} 0 1,1 -${innerRadiusF * 2},0`}
+                d={circlePath(innerRadiusF, ringRotationDegrees.innerF)}
               />
               <path
                 id="trackCirclePathInnerG"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusG},0 a ${innerRadiusG},${innerRadiusG} 0 1,1 ${innerRadiusG * 2},0 a ${innerRadiusG},${innerRadiusG} 0 1,1 -${innerRadiusG * 2},0`}
+                d={circlePath(innerRadiusG, ringRotationDegrees.innerG)}
               />
               <path
                 id="trackCirclePathInnerH"
-                d={`M ${outerRadius + padding},${outerRadius + padding} m -${innerRadiusH},0 a ${innerRadiusH},${innerRadiusH} 0 1,1 ${innerRadiusH * 2},0 a ${innerRadiusH},${innerRadiusH} 0 1,1 -${innerRadiusH * 2},0`}
+                d={circlePath(innerRadiusH, ringRotationDegrees.innerH)}
               />
             </defs>
             <g className="circleGroupWrap circleGroupWrapOuter">
               <g className="circleGroup circleGroupOuter">
                 {displayedTracks.map((track, index) => {
-                  // Outer ring uses link anchors and supports zoom-on-first-click.
                   const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
                   const offset = offsetsOuter[index] ?? fallbackOffset;
                   return (
@@ -1109,146 +1365,397 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                       data-ring="outer"
                       data-index={index}
                       onClick={(event) => handleOuterClick(event, track.id)}
+                      style={{
+                        pointerEvents: revealedLabels.outer[index] ? "auto" : "none"
+                      }}
+                      aria-disabled={!revealedLabels.outer[index]}
                     >
-                      <text className="circleLabel">
-                        <textPath
-                          href="#trackCirclePathOuter"
-                          startOffset={offset}
-                        >
-                          {revealedLabels.outer[index]
-                            ? track.title
-                            : getOuterDisplayTitle(index, track.title)}
-                        </textPath>
-                      </text>
+                      <TrackLabel
+                        className="circleLabel"
+                          displayText={getDisplayTitle("outer", index, getCircleTitle(track.title))}
+                        hrefId="#trackCirclePathOuter"
+                        startOffset={offset}
+                      />
                     </a>
                   );
                 })}
               </g>
             </g>
-            {needsMeasure && (
-              <g className="circleMeasure" aria-hidden="true">
-                {displayedTracks.map((track, index) => {
-                  // Hidden labels used to measure text length for offsets.
-                  const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-                  const offset = offsetsOuter[index] ?? fallbackOffset;
-                  return (
-                    <text key={`${track.id}-outer-measure`} className="circleLabel">
-                      <textPath
-                        href="#trackCirclePathOuter"
-                        startOffset={offset}
-                        ref={(node) => {
-                          outerMeasureRefs.current[index] = node;
-                        }}
-                      >
-                        {track.title}
-                      </textPath>
-                    </text>
-                  );
-                })}
-              </g>
-            )}
+            <g className="circleMeasure" aria-hidden="true">
+              {displayedTracks.map((track, index) => {
+                const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                const offset = offsetsOuter[index] ?? fallbackOffset;
+                return (
+                  <text key={`${track.id}-outer-measure`} className="circleLabel">
+                    <textPath
+                      href="#trackCirclePathOuter"
+                      startOffset={offset}
+                      ref={(node) => {
+                        outerMeasureRefs.current[index] = node;
+                      }}
+                    >
+                      {track.title}
+                    </textPath>
+                  </text>
+                );
+              })}
+            </g>
             {!rasterLayers && (
               <>
-                <g
-                  className="circleGroupWrap"
-                >
-                  <InnerRing
-                    ringKey="innerA"
-                    className="circleGroupInnerA"
-                    pathId="#trackCirclePathInnerA"
-                    offsets={[]}
-                    titles={scrambledTitles.innerA}
-                    displayedTracks={displayedTracks}
-                    segmentPercent={segmentPercent}
-                  />
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerA">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerA[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-a`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerA"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerA", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerA"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerA[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
                 </g>
-                {showAllRings && (
-                  <>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerB"
-                        className="circleGroupInnerB"
-                        pathId="#trackCirclePathInnerB"
-                        offsets={[]}
-                        titles={scrambledTitles.innerB}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerC"
-                        className="circleGroupInnerC"
-                        pathId="#trackCirclePathInnerC"
-                        offsets={[]}
-                        titles={scrambledTitles.innerC}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerD"
-                        className="circleGroupInnerD"
-                        pathId="#trackCirclePathInnerD"
-                        offsets={[]}
-                        titles={scrambledTitles.innerD}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerE"
-                        className="circleGroupInnerE"
-                        pathId="#trackCirclePathInnerE"
-                        offsets={[]}
-                        titles={scrambledTitles.innerE}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerF"
-                        className="circleGroupInnerF"
-                        pathId="#trackCirclePathInnerF"
-                        offsets={[]}
-                        titles={scrambledTitles.innerF}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerG"
-                        className="circleGroupInnerG"
-                        pathId="#trackCirclePathInnerG"
-                        offsets={[]}
-                        titles={scrambledTitles.innerG}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerH"
-                        className="circleGroupInnerH"
-                        pathId="#trackCirclePathInnerH"
-                        offsets={[]}
-                        titles={scrambledTitles.innerH}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                  </>
-                )}
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerB">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerB[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-b`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerB"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerB", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerB"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerB[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerC">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerC[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-c`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerC"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerC", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerC"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerC[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerD">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerD[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-d`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerD"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerD", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerD"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerD[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerE">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerE[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-e`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerE"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerE", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerE"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerE[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerF">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerF[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-f`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerF"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerF", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerF"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerF[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerG">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerG[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-g`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerG"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerG", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerG"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerG[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
+                <g className="circleGroupWrap">
+                  <g className="circleGroup circleGroupInnerH">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerH[index] ?? fallbackOffset;
+                      return (
+                        <TrackLabel
+                          key={`${track.id}-inner-h`}
+                          className="circleLabel circleLabelInner circleLink"
+                          dataRing="innerH"
+                          dataIndex={index}
+                            displayText={getDisplayTitle("innerH", index, getCircleTitle(track.title))}
+                          hrefId="#trackCirclePathInnerH"
+                          startOffset={offset}
+                          onClick={
+                            revealedLabels.innerH[index]
+                              ? (event) => handleInnerClick(event, track.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                </g>
               </>
             )}
-            {/* No inner-ring measurement; only outer ring uses precise offsets. */}
+            {!rasterLayers && (
+              <g className="circleMeasure" aria-hidden="true">
+                <g className="circleGroup circleGroupInnerA">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerA[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-a-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerA"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerAMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerB">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerB[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-b-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerB"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerBMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerC">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerC[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-c-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerC"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerCMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerD">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerD[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-d-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerD"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerDMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerE">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerE[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-e-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerE"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerEMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerF">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerF[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-f-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerF"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerFMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerG">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerG[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-g-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerG"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerGMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerH">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerH[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-h-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerH"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerHMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+              </g>
+            )}
           </svg>
         </div>
-      </div>
-    </main>
+        </div>}
+      </main>
+    </>
   );
 }
