@@ -260,8 +260,8 @@ a:focus { outline: none; }
 }
 
 .creditsLine {
-  font-size: 11px;
-  line-height: 1.1;
+  font-size: 12px;
+  line-height: 1.05;
 }
 
 .creditsLink {
