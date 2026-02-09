@@ -1162,14 +1162,14 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               <div className="creditsLine">Mixed &amp; Mastered by Yang Woo Jo</div>
               <div className="creditsDivider">~</div>
               <div className="creditsLine">Runaway Project 2025 ©</div>
-              <a
+              {/* <a
                 className="creditsLink"
                 href="/cover.png"
                 target="_blank"
                 rel="noreferrer"
               >
                 cover
-              </a>
+              </a> */}
             </div>
             <div className="creditsColumn">
               <div className="creditsSectionTitle">Safety Guide</div>
