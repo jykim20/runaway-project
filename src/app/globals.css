@@ -217,7 +217,7 @@ a:focus { outline: none; }
   backdrop-filter: blur(8px);
   z-index: 60;
   display: grid;
-  place-items: center;
+  place-items: start;
   padding: 24px;
 }
 
@@ -231,6 +231,7 @@ a:focus { outline: none; }
   scrollbar-width: none;
   align-items: flex-start;
   justify-content: flex-start;
+  margin: 0;
 }
 
 .creditsContent::-webkit-scrollbar {
