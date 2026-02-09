@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  memo,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -12,10 +11,6 @@ import {
 } from "react";
 import ParticleLayer from "./components/ParticleLayer";
 
-let cachedFontData: string | null = null;
-const textLengthCache = new Map<string, number>();
-
-// Track metadata used to render ring labels and link targets.
 const tracks = [
   {
     id: "safety-guide",
@@ -216,52 +211,9 @@ const tracks = [
   }
 ];
 
-type InnerRingKey =
-  | "innerA"
-  | "innerB"
-  | "innerC"
-  | "innerD"
-  | "innerE"
-  | "innerF"
-  | "innerG"
-  | "innerH";
-
-const InnerRing = memo(function InnerRing({
-  ringKey,
-  className,
-  pathId,
-  offsets,
-  titles,
-  displayedTracks,
-  segmentPercent
-}: {
-  ringKey: InnerRingKey;
-  className: string;
-  pathId: string;
-  offsets: number[];
-  titles: string[];
-  displayedTracks: typeof tracks;
-  segmentPercent: number;
-}) {
-  return (
-    <g className={`circleGroup ${className}`}>
-      {displayedTracks.map((track, index) => {
-        const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-        const offset = offsets[index] ?? fallbackOffset;
-        return (
-          <text key={`${track.id}-${ringKey}`} className="circleLabel circleLabelInner">
-            <textPath href={pathId} startOffset={offset}>
-              {titles[index] ?? track.title}
-            </textPath>
-          </text>
-        );
-      })}
-    </g>
-  );
-});
-
 export default function Page() {
-  // Computed startOffset values for each ring's <textPath> elements.
+  // React state arrays that hold the computed startOffset values for each ring's <textPath> elements
+  // offsetsOuter is an array of numbers for the outer ring. Each entry matches a track and represents where along the path its label should start. 
   const [offsetsOuter, setOffsetsOuter] = useState<number[]>([]);
   const [offsetsInnerA, setOffsetsInnerA] = useState<number[]>([]);
   const [offsetsInnerB, setOffsetsInnerB] = useState<number[]>([]);
@@ -271,13 +223,11 @@ export default function Page() {
   const [offsetsInnerF, setOffsetsInnerF] = useState<number[]>([]);
   const [offsetsInnerG, setOffsetsInnerG] = useState<number[]>([]);
   const [offsetsInnerH, setOffsetsInnerH] = useState<number[]>([]);
-  // When set, the whole page scales/pans to zoom into the circle for focus.
   const [zoomTarget, setZoomTarget] = useState<{
     scale: number;
     x: number;
     y: number;
   } | null>(null);
-  // Scrambled titles (per ring) are swapped for real titles once revealed/hovered.
   const [scrambledTitles, setScrambledTitles] = useState(() => ({
     outer: tracks.map((track) => track.title),
     innerA: tracks.map((track) => track.title),
@@ -290,15 +240,6 @@ export default function Page() {
     innerH: tracks.map((track) => track.title)
   }));
   const [scrambleActive, setScrambleActive] = useState(true);
-  const lastInteractionRef = useRef<number>(Date.now());
-  const [showAllRings, setShowAllRings] = useState(false);
-  const [revealProgressOuter, setRevealProgressOuter] = useState(
-    () => Array(tracks.length).fill(0) as number[]
-  );
-  const revealInFlightOuterRef = useRef<Array<boolean>>(
-    Array(tracks.length).fill(false)
-  );
-  // Current hover target used to reveal the label temporarily.
   const [hoveredLabel, setHoveredLabel] = useState<{
     ring:
       | "outer"
@@ -312,23 +253,6 @@ export default function Page() {
       | "innerH";
     index: number;
   } | null>(null);
-  const zoomTargetRef = useRef<typeof zoomTarget>(null);
-  const hoveredLabelRef = useRef<{
-    ring:
-      | "outer"
-      | "innerA"
-      | "innerB"
-      | "innerC"
-      | "innerD"
-      | "innerE"
-      | "innerF"
-      | "innerG"
-      | "innerH";
-    index: number;
-  } | null>(null);
-  const pendingHoverRef = useRef<typeof hoveredLabel>(null);
-  const hoverRafRef = useRef<number | null>(null);
-  // Permanent reveal state (set on hover) to stop scrambling for that label.
   const [revealedLabels, setRevealedLabels] = useState(() => ({
     outer: Array(tracks.length).fill(false) as boolean[],
     innerA: Array(tracks.length).fill(false) as boolean[],
@@ -340,12 +264,10 @@ export default function Page() {
     innerG: Array(tracks.length).fill(false) as boolean[],
     innerH: Array(tracks.length).fill(false) as boolean[]
   }));
-  // Keep a ref so the scramble interval reads the latest revealed state.
   const revealedLabelsRef = useRef(revealedLabels);
   useEffect(() => {
     const body = document.body;
     const root = document.documentElement;
-    // Lock page scrolling while zoomed.
     if (zoomTarget) {
       body.classList.add("noScroll");
       root.classList.add("noScroll");
@@ -358,7 +280,7 @@ export default function Page() {
       root.classList.remove("noScroll");
     };
   }, [zoomTarget]);
-  // Refs for <textPath> nodes per ring so text lengths can be measured.
+  // Refs for <textPath> nodes per ring so text lengths can be measured
   const outerRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerARefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerBRefs = useRef<Array<SVGTextPathElement | null>>([]);
@@ -369,8 +291,17 @@ export default function Page() {
   const innerGRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const innerHRefs = useRef<Array<SVGTextPathElement | null>>([]);
   const outerMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerAMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerBMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerCMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerDMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerEMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerFMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerGMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const innerHMeasureRefs = useRef<Array<SVGTextPathElement | null>>([]);
+  const circleGroupRefs = useRef<Array<HTMLElement | SVGElement | null>>([]);
   const circleWrapRef = useRef<HTMLDivElement | null>(null);
-  // State for rasterized SVG layers (inner A-H) used for performance.
+  // State for rasterized SVG layers (inner A/B/C)
   const svgRef = useRef<SVGSVGElement | null>(null);
   const fontDataRef = useRef<string | null>(null);
   const [rasterLayers, setRasterLayers] = useState<{
@@ -384,11 +315,11 @@ export default function Page() {
     innerH: string;
   } | null>(null);
   const rasterEnabled = true;
-  // Base geometry for the outer ring.
+  // Base geometry
   const outerRadius = 420;
   const padding = 24;
   const innerGap = 45;
-  // Font sizes for inner rings.
+  // Font sizes for inner rings
   const innerFontSizeA = 16;
   const innerFontSizeB = 13;
   const innerFontSizeC = 12;
@@ -397,7 +328,7 @@ export default function Page() {
   const innerFontSizeF = 9;
   const innerFontSizeG = 8;
   const innerFontSizeH = 7;
-  // Radii for inner rings computed from outer radius and gaps.
+  // Radii for inner rings computed from outer radius and gaps
   const innerRadiusA = outerRadius - innerGap;
   const innerRadiusB = outerRadius - innerGap * 2;
   const innerRadiusC = outerRadius - innerGap * 3;
@@ -414,50 +345,11 @@ export default function Page() {
   }, [revealedLabels]);
 
   useEffect(() => {
-    hoveredLabelRef.current = hoveredLabel;
-  }, [hoveredLabel]);
-
-  useEffect(() => {
-    zoomTargetRef.current = zoomTarget;
-  }, [zoomTarget]);
-
-  useEffect(() => {
-    return () => {
-      if (hoverRafRef.current !== null) {
-        cancelAnimationFrame(hoverRafRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let rafId: number | null = null;
-    if (typeof (window as typeof window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === "function") {
-      const id = (window as typeof window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(() => {
-        setShowAllRings(true);
-      });
-      return () => {
-        if (typeof (window as typeof window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback === "function") {
-          (window as typeof window & { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(id);
-        }
-      };
-    }
-    rafId = requestAnimationFrame(() => {
-      setShowAllRings(true);
-    });
-    return () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
-  }, []);
-
-  useEffect(() => {
-    // Scramble titles continuously until revealed.
     const symbols = "!@#$%^&*+-=?:;<>[]{}~";
-    const scrambleInterval = 150;
-    const idleTimeoutMs = 6000;
+    const scrambleInterval = 90;
     setScrambleActive(true);
     setRasterLayers(null);
     let intervalId: number | null = null;
-    let ringCursor = 0;
 
     const scrambleText = (text: string) =>
       text
@@ -465,42 +357,38 @@ export default function Page() {
         .map((char) => (char === " " ? " " : symbols[Math.floor(Math.random() * symbols.length)]))
         .join("");
 
-    const ringOrder = [
-      "outer",
-      "innerA",
-      "innerB",
-      "innerC",
-      "innerD",
-      "innerE",
-      "innerF",
-      "innerG",
-      "innerH"
-    ] as const;
-    type RingKey = (typeof ringOrder)[number];
-    const getRingNext = (ring: RingKey, revealed: typeof revealedLabelsRef.current) =>
-      tracks.map((track, index) =>
-        revealed[ring][index] ? track.title : scrambleText(track.title)
-      );
-
     const updateTitles = () => {
-      if (zoomTargetRef.current) return;
-      const now = Date.now();
-      if (now - lastInteractionRef.current > idleTimeoutMs) return;
       const revealed = revealedLabelsRef.current;
-      const allRevealed = Object.values(revealed).every((ring) =>
-        ring.every(Boolean)
-      );
-      if (allRevealed) return;
-      const ringA = ringOrder[ringCursor % ringOrder.length];
-      const ringB = ringOrder[(ringCursor + 1) % ringOrder.length];
-      ringCursor = (ringCursor + 2) % ringOrder.length;
-
+      const next = {
+        outer: tracks.map((track, index) =>
+          revealed.outer[index] ? track.title : scrambleText(track.title)
+        ),
+        innerA: tracks.map((track, index) =>
+          revealed.innerA[index] ? track.title : scrambleText(track.title)
+        ),
+        innerB: tracks.map((track, index) =>
+          revealed.innerB[index] ? track.title : scrambleText(track.title)
+        ),
+        innerC: tracks.map((track, index) =>
+          revealed.innerC[index] ? track.title : scrambleText(track.title)
+        ),
+        innerD: tracks.map((track, index) =>
+          revealed.innerD[index] ? track.title : scrambleText(track.title)
+        ),
+        innerE: tracks.map((track, index) =>
+          revealed.innerE[index] ? track.title : scrambleText(track.title)
+        ),
+        innerF: tracks.map((track, index) =>
+          revealed.innerF[index] ? track.title : scrambleText(track.title)
+        ),
+        innerG: tracks.map((track, index) =>
+          revealed.innerG[index] ? track.title : scrambleText(track.title)
+        ),
+        innerH: tracks.map((track, index) =>
+          revealed.innerH[index] ? track.title : scrambleText(track.title)
+        )
+      };
       setScrambledTitles((prev) => {
-        const next = { ...prev };
-        next[ringA] = getRingNext(ringA, revealed);
-        if (ringB !== ringA) {
-          next[ringB] = getRingNext(ringB, revealed);
-        }
         const same =
           prev.outer.join("") === next.outer.join("") &&
           prev.innerA.join("") === next.innerA.join("") &&
@@ -542,22 +430,15 @@ export default function Page() {
   }, []);
 
   useLayoutEffect(() => {
-    // Measure label lengths and compute evenly spaced start offsets around a ring.
+
+    // Measure label lengths and compute evenly spaced start offsets around a ring
     const computeOffsetsForRadius = (
       refs: MutableRefObject<Array<SVGTextPathElement | null>>,
       radius: number
     ) => {
-      const lengths = refs.current.map((node) => {
-        if (!node) return 0;
-        const text = node.textContent ?? "";
-        const fontSize = window.getComputedStyle(node).fontSize;
-        const key = `${text}|${fontSize}`;
-        const cached = textLengthCache.get(key);
-        if (cached !== undefined) return cached;
-        const length = node.getComputedTextLength();
-        textLengthCache.set(key, length);
-        return length;
-      });
+      const lengths = refs.current.map((node) =>
+        node ? node.getComputedTextLength() : 0
+      );
       if (lengths.some((length) => length === 0)) return null;
 
       const circumference = 2 * Math.PI * radius;
@@ -571,17 +452,44 @@ export default function Page() {
       });
     };
 
-    // Computes and stores the startOffset arrays for each ring.
+    // computes and stores the startOffset arrays for each ring
     const computeOffsets = () => {
       const nextOuter = computeOffsetsForRadius(outerMeasureRefs, outerRadius);
       if (!nextOuter) return;
+      if (rasterLayers) {
+        setOffsetsOuter(nextOuter);
+        return;
+      }
+      const nextInnerA = computeOffsetsForRadius(innerAMeasureRefs, innerRadiusA);
+      const nextInnerB = computeOffsetsForRadius(innerBMeasureRefs, innerRadiusB);
+      const nextInnerC = computeOffsetsForRadius(innerCMeasureRefs, innerRadiusC);
+      const nextInnerD = computeOffsetsForRadius(innerDMeasureRefs, innerRadiusD);
+      const nextInnerE = computeOffsetsForRadius(innerEMeasureRefs, innerRadiusE);
+      const nextInnerF = computeOffsetsForRadius(innerFMeasureRefs, innerRadiusF);
+      const nextInnerG = computeOffsetsForRadius(innerGMeasureRefs, innerRadiusG);
+      const nextInnerH = computeOffsetsForRadius(innerHMeasureRefs, innerRadiusH);
+      if (
+        !nextInnerA ||
+        !nextInnerB ||
+        !nextInnerC ||
+        !nextInnerD ||
+        !nextInnerE ||
+        !nextInnerF ||
+        !nextInnerG ||
+        !nextInnerH
+      ) return;
       setOffsetsOuter(nextOuter);
-
-      // Inner rings use fixed percent offsets (no text-length measurement).
+      setOffsetsInnerA(nextInnerA);
+      setOffsetsInnerB(nextInnerB);
+      setOffsetsInnerC(nextInnerC);
+      setOffsetsInnerD(nextInnerD);
+      setOffsetsInnerE(nextInnerE);
+      setOffsetsInnerF(nextInnerF);
+      setOffsetsInnerG(nextInnerG);
+      setOffsetsInnerH(nextInnerH);
     };
 
-    // Schedules offset calculation at the right time and cleans up.
-    // Waits for layout + fonts to settle before measuring text lengths.
+    // Schedules offset calculation at the right time and cleans up. Waits for the layout and fonts to fully settled before measuring text lengths (fonts and SVG paths can take an extra frame to resolve)
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(computeOffsets);
     });
@@ -601,11 +509,36 @@ export default function Page() {
     innerRadiusG,
     innerRadiusH,
     outerRadius,
-    rasterLayers,
-    showAllRings
+    rasterLayers
   ]);
 
-  // Reset rasterized inner ring images when any inner font size changes.
+  // Assigns randomized pulse scale/speed/delay CSS variables to each ring wrapper. 
+  useEffect(() => {
+    const groups = circleGroupRefs.current.filter(
+      (group): group is HTMLElement | SVGElement => Boolean(group)
+    );
+    if (!groups.length) return;
+
+    const lastIndex = groups.length - 1;
+    groups.forEach((group, index) => {
+      const isOuter = index === 0;
+      const isInnermost = index === lastIndex;
+      const min = isOuter
+        ? 1
+        : (isInnermost ? 0.9 : 0.95) + Math.random() * 0.02;
+      const max = isOuter
+        ? 1
+        : min + (isInnermost ? 0.1 : 0.06) + Math.random() * 0.02;
+      const speed = 5 + Math.random() * 4;
+      const delay = -Math.random() * speed;
+      group.style.setProperty("--pulse-min", min.toFixed(3));
+      group.style.setProperty("--pulse-max", max.toFixed(3));
+      group.style.setProperty("--pulse-speed", `${speed.toFixed(2)}s`);
+      group.style.setProperty("--pulse-delay", `${delay.toFixed(2)}s`);
+    });
+  }, [rasterLayers]);
+
+  // Resets the rasterized inner ring images whenever any inner font size changes
   useEffect(() => {
     setRasterLayers(null);
   }, [
@@ -619,18 +552,25 @@ export default function Page() {
     innerFontSizeH
   ]);
 
-  // Rasterize the inner rings into images once the SVG is ready and text offsets are computed.
+  // Rasterizes the inner rings into images once the SVG is ready and text offsets are computed
   useEffect(() => {
     if (!rasterEnabled) return;
     if (scrambleActive) return;
     if (rasterLayers) return;
     if (!svgRef.current) return;
-    if (!offsetsOuter.length) return;
+    if (
+      !offsetsInnerA.length ||
+      !offsetsInnerB.length ||
+      !offsetsInnerC.length ||
+      !offsetsInnerD.length ||
+      !offsetsInnerE.length ||
+      !offsetsInnerF.length ||
+      !offsetsInnerG.length ||
+      !offsetsInnerH.length
+    ) return;
 
     const serializer = new XMLSerializer();
     const ensureFont = async () => {
-      // Inline the font so the rasterized SVGs render correctly as images.
-      if (cachedFontData) return cachedFontData;
       if (fontDataRef.current) return fontDataRef.current;
       const res = await fetch("/fonts/SuisseIntl-Thin.otf");
       const buffer = await res.arrayBuffer();
@@ -640,13 +580,11 @@ export default function Page() {
         binary += String.fromCharCode(b);
       });
       const base64 = btoa(binary);
-      cachedFontData = base64;
       fontDataRef.current = base64;
       return base64;
     };
 
     const buildLayer = async (className: string) => {
-      // Clone the SVG and keep only a single ring to create a focused layer.
       const clone = svgRef.current!.cloneNode(true) as SVGSVGElement;
       clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       const wraps = clone.querySelectorAll(".circleGroupWrap");
@@ -683,7 +621,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
 
     let isCancelled = false;
     const run = async () => {
-      // Build 8 ring images in parallel.
       const [innerA, innerB, innerC, innerD, innerE, innerF, innerG, innerH] = await Promise.all([
         buildLayer("circleGroupInnerA"),
         buildLayer("circleGroupInnerB"),
@@ -697,63 +634,22 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       if (isCancelled) return;
       setRasterLayers({ innerA, innerB, innerC, innerD, innerE, innerF, innerG, innerH });
     };
-    if (typeof (window as typeof window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === "function") {
-      const id = (window as typeof window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
-      return () => {
-        isCancelled = true;
-        if (typeof (window as typeof window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback === "function") {
-          (window as typeof window & { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(id);
-        }
-      };
-    }
     run();
     return () => {
       isCancelled = true;
     };
   }, [
-    offsetsOuter.length,
+    offsetsInnerA.length,
+    offsetsInnerB.length,
+    offsetsInnerC.length,
+    offsetsInnerD.length,
+    offsetsInnerE.length,
+    offsetsInnerF.length,
+    offsetsInnerG.length,
+    offsetsInnerH.length,
     rasterLayers,
     scrambleActive
   ]);
-
-  const startOuterReveal = (index: number) => {
-    if (revealInFlightOuterRef.current[index]) return;
-    revealInFlightOuterRef.current[index] = true;
-    const titleLength = tracks[index]?.title?.length ?? 0;
-    if (titleLength === 0) {
-      revealInFlightOuterRef.current[index] = false;
-      return;
-    }
-    let lastTime = performance.now();
-    const charIntervalMs = 10000;
-    const tick = (now: number) => {
-      const delta = now - lastTime;
-      lastTime = now;
-      setRevealProgressOuter((prev) => {
-        const next = [...prev];
-        const current = next[index] ?? 0;
-        const increment = Math.max(1, Math.floor(delta / charIntervalMs));
-        const updated = Math.min(titleLength, current + increment);
-        next[index] = updated;
-        if (updated >= titleLength) {
-          revealInFlightOuterRef.current[index] = false;
-          setRevealedLabels((prevLabels) => {
-            if (prevLabels.outer[index]) return prevLabels;
-            const nextLabels = { ...prevLabels, outer: [...prevLabels.outer] };
-            nextLabels.outer[index] = true;
-            revealedLabelsRef.current = nextLabels;
-            return nextLabels;
-          });
-          return next;
-        }
-        return next;
-      });
-      if (revealInFlightOuterRef.current[index]) {
-        requestAnimationFrame(tick);
-      }
-    };
-    requestAnimationFrame(tick);
-  };
 
   const markRevealed = (
     ring:
@@ -768,10 +664,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       | "innerH",
     index: number
   ) => {
-    if (ring === "outer") {
-      startOuterReveal(index);
-      return;
-    }
     setRevealedLabels((prev) => {
       if (prev[ring][index]) return prev;
       const next = {
@@ -791,48 +683,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     });
   };
 
-  const scheduleHoverUpdate = (
-    next:
-      | {
-          ring:
-            | "outer"
-            | "innerA"
-            | "innerB"
-            | "innerC"
-            | "innerD"
-            | "innerE"
-            | "innerF"
-            | "innerG"
-            | "innerH";
-          index: number;
-        }
-      | null
-  ) => {
-    pendingHoverRef.current = next;
-    if (hoverRafRef.current !== null) return;
-    hoverRafRef.current = requestAnimationFrame(() => {
-      hoverRafRef.current = null;
-      const pending = pendingHoverRef.current;
-      const current = hoveredLabelRef.current;
-      if (
-        pending?.ring === current?.ring &&
-        pending?.index === current?.index
-      ) {
-        return;
-      }
-      setHoveredLabel(pending);
-      if (pending) {
-        markRevealed(pending.ring, pending.index);
-      }
-    });
-  };
-
   const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-    // Resolve which ring/label is under the pointer and update reveal state.
-    lastInteractionRef.current = Date.now();
     const target = (event.target as Element | null)?.closest?.("[data-ring]");
     if (!target) {
-      scheduleHoverUpdate(null);
+      if (hoveredLabel) setHoveredLabel(null);
       return;
     }
     const ring = target.getAttribute("data-ring") as
@@ -849,14 +703,16 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
     const indexAttr = target.getAttribute("data-index");
     const index = indexAttr ? Number(indexAttr) : Number.NaN;
     if (!ring || Number.isNaN(index)) {
-      scheduleHoverUpdate(null);
+      if (hoveredLabel) setHoveredLabel(null);
       return;
     }
-    scheduleHoverUpdate({ ring, index });
+    if (!hoveredLabel || hoveredLabel.ring !== ring || hoveredLabel.index !== index) {
+      setHoveredLabel({ ring, index });
+    }
+    markRevealed(ring, index);
   };
 
   const resetScramble = () => {
-    // Return all labels to scrambled state.
     setRevealedLabels({
       outer: Array(tracks.length).fill(false),
       innerA: Array(tracks.length).fill(false),
@@ -869,8 +725,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
       innerH: Array(tracks.length).fill(false)
     });
     setHoveredLabel(null);
-    setRevealProgressOuter(Array(tracks.length).fill(0));
-    revealInFlightOuterRef.current = Array(tracks.length).fill(false);
     setScrambledTitles({
       outer: tracks.map((track) => track.title),
       innerA: tracks.map((track) => track.title),
@@ -885,22 +739,11 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   };
 
   const size = outerRadius * 2 + padding * 2;
-  const needsMeasure = offsetsOuter.length !== displayedTracks.length;
-
-  const getOuterDisplayTitle = (index: number, fallback: string) => {
-    const title = tracks[index]?.title ?? fallback;
-    const scrambled = scrambledTitles.outer[index] ?? title;
-    const progress = revealProgressOuter[index] ?? 0;
-    if (progress <= 0) return scrambled;
-    if (progress >= title.length) return title;
-    return `${title.slice(0, progress)}${scrambled.slice(progress)}`;
-  };
 
   const handleOuterClick = (
     event: React.MouseEvent<HTMLAnchorElement>,
     trackId: string
   ) => {
-    // First click zooms the whole ring; second click follows the hash.
     event.preventDefault();
     if (zoomTarget) {
       window.location.hash = trackId;
@@ -922,7 +765,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
   };
 
   useEffect(() => {
-    // Click outside the circle to exit zoom and clear hash.
     if (!zoomTarget) return;
     const handleBodyClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
@@ -987,10 +829,12 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             <span className="centerYear">(2025)</span>
           </div> */}
           {rasterLayers && (
-            // When rasterized, draw image layers instead of live SVG text.
             <div className="rasterStack" aria-hidden="true">
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[0] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerA">
                   <img src={rasterLayers.innerA} alt="" />
@@ -998,6 +842,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[1] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerB">
                   <img src={rasterLayers.innerB} alt="" />
@@ -1005,6 +852,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[2] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerC">
                   <img src={rasterLayers.innerC} alt="" />
@@ -1012,6 +862,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[3] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerD">
                   <img src={rasterLayers.innerD} alt="" />
@@ -1019,6 +872,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[4] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerE">
                   <img src={rasterLayers.innerE} alt="" />
@@ -1026,6 +882,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[5] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerF">
                   <img src={rasterLayers.innerF} alt="" />
@@ -1033,6 +892,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[6] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerG">
                   <img src={rasterLayers.innerG} alt="" />
@@ -1040,6 +902,9 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               </div>
               <div
                 className="rasterLayerWrap circleGroupWrap"
+                ref={(node) => {
+                  circleGroupRefs.current[7] = node;
+                }}
               >
                 <div className="rasterLayer rasterInnerH">
                   <img src={rasterLayers.innerH} alt="" />
@@ -1057,7 +922,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             onPointerLeave={() => setHoveredLabel(null)}
           >
             <defs>
-              {/* Path definitions for each ring; labels follow these circles. */}
               <path
                 id="trackCirclePathOuter"
                 d={`M ${outerRadius + padding},${outerRadius + padding} m -${outerRadius},0 a ${outerRadius},${outerRadius} 0 1,1 ${outerRadius * 2},0 a ${outerRadius},${outerRadius} 0 1,1 -${outerRadius * 2},0`}
@@ -1098,7 +962,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
             <g className="circleGroupWrap circleGroupWrapOuter">
               <g className="circleGroup circleGroupOuter">
                 {displayedTracks.map((track, index) => {
-                  // Outer ring uses link anchors and supports zoom-on-first-click.
                   const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
                   const offset = offsetsOuter[index] ?? fallbackOffset;
                   return (
@@ -1115,9 +978,10 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                           href="#trackCirclePathOuter"
                           startOffset={offset}
                         >
-                          {revealedLabels.outer[index]
+                          {revealedLabels.outer[index] ||
+                          (hoveredLabel?.ring === "outer" && hoveredLabel.index === index)
                             ? track.title
-                            : getOuterDisplayTitle(index, track.title)}
+                            : scrambledTitles.outer[index] ?? track.title}
                         </textPath>
                       </text>
                     </a>
@@ -1125,127 +989,433 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
                 })}
               </g>
             </g>
-            {needsMeasure && (
-              <g className="circleMeasure" aria-hidden="true">
-                {displayedTracks.map((track, index) => {
-                  // Hidden labels used to measure text length for offsets.
-                  const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
-                  const offset = offsetsOuter[index] ?? fallbackOffset;
-                  return (
-                    <text key={`${track.id}-outer-measure`} className="circleLabel">
-                      <textPath
-                        href="#trackCirclePathOuter"
-                        startOffset={offset}
-                        ref={(node) => {
-                          outerMeasureRefs.current[index] = node;
-                        }}
-                      >
-                        {track.title}
-                      </textPath>
-                    </text>
-                  );
-                })}
-              </g>
-            )}
+            <g className="circleMeasure" aria-hidden="true">
+              {displayedTracks.map((track, index) => {
+                const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                const offset = offsetsOuter[index] ?? fallbackOffset;
+                return (
+                  <text key={`${track.id}-outer-measure`} className="circleLabel">
+                    <textPath
+                      href="#trackCirclePathOuter"
+                      startOffset={offset}
+                      ref={(node) => {
+                        outerMeasureRefs.current[index] = node;
+                      }}
+                    >
+                      {track.title}
+                    </textPath>
+                  </text>
+                );
+              })}
+            </g>
             {!rasterLayers && (
               <>
                 <g
                   className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[0] = node;
+                  }}
                 >
-                  <InnerRing
-                    ringKey="innerA"
-                    className="circleGroupInnerA"
-                    pathId="#trackCirclePathInnerA"
-                    offsets={[]}
-                    titles={scrambledTitles.innerA}
-                    displayedTracks={displayedTracks}
-                    segmentPercent={segmentPercent}
-                  />
+                  <g className="circleGroup circleGroupInnerA">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerA[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-a`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerA"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerA"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerA[index] ||
+                            (hoveredLabel?.ring === "innerA" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerA[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
                 </g>
-                {showAllRings && (
-                  <>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerB"
-                        className="circleGroupInnerB"
-                        pathId="#trackCirclePathInnerB"
-                        offsets={[]}
-                        titles={scrambledTitles.innerB}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerC"
-                        className="circleGroupInnerC"
-                        pathId="#trackCirclePathInnerC"
-                        offsets={[]}
-                        titles={scrambledTitles.innerC}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerD"
-                        className="circleGroupInnerD"
-                        pathId="#trackCirclePathInnerD"
-                        offsets={[]}
-                        titles={scrambledTitles.innerD}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerE"
-                        className="circleGroupInnerE"
-                        pathId="#trackCirclePathInnerE"
-                        offsets={[]}
-                        titles={scrambledTitles.innerE}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerF"
-                        className="circleGroupInnerF"
-                        pathId="#trackCirclePathInnerF"
-                        offsets={[]}
-                        titles={scrambledTitles.innerF}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerG"
-                        className="circleGroupInnerG"
-                        pathId="#trackCirclePathInnerG"
-                        offsets={[]}
-                        titles={scrambledTitles.innerG}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                    <g className="circleGroupWrap">
-                      <InnerRing
-                        ringKey="innerH"
-                        className="circleGroupInnerH"
-                        pathId="#trackCirclePathInnerH"
-                        offsets={[]}
-                        titles={scrambledTitles.innerH}
-                        displayedTracks={displayedTracks}
-                        segmentPercent={segmentPercent}
-                      />
-                    </g>
-                  </>
-                )}
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[1] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerB">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerB[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-b`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerB"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerB"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerB[index] ||
+                            (hoveredLabel?.ring === "innerB" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerB[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[2] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerC">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerC[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-c`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerC"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerC"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerC[index] ||
+                            (hoveredLabel?.ring === "innerC" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerC[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[3] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerD">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerD[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-d`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerD"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerD"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerD[index] ||
+                            (hoveredLabel?.ring === "innerD" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerD[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[4] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerE">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerE[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-e`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerE"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerE"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerE[index] ||
+                            (hoveredLabel?.ring === "innerE" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerE[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[5] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerF">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerF[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-f`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerF"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerF"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerF[index] ||
+                            (hoveredLabel?.ring === "innerF" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerF[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[6] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerG">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerG[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-g`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerG"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerG"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerG[index] ||
+                            (hoveredLabel?.ring === "innerG" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerG[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
+                <g
+                  className="circleGroupWrap"
+                  ref={(node) => {
+                    circleGroupRefs.current[7] = node;
+                  }}
+                >
+                  <g className="circleGroup circleGroupInnerH">
+                    {displayedTracks.map((track, index) => {
+                      const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                      const offset = offsetsInnerH[index] ?? fallbackOffset;
+                      return (
+                        <text
+                          key={`${track.id}-inner-h`}
+                          className="circleLabel circleLabelInner"
+                          data-ring="innerH"
+                          data-index={index}
+                        >
+                          <textPath
+                            href="#trackCirclePathInnerH"
+                            startOffset={offset}
+                          >
+                            {revealedLabels.innerH[index] ||
+                            (hoveredLabel?.ring === "innerH" && hoveredLabel.index === index)
+                              ? track.title
+                              : scrambledTitles.innerH[index] ?? track.title}
+                          </textPath>
+                        </text>
+                      );
+                    })}
+                  </g>
+                </g>
               </>
             )}
-            {/* No inner-ring measurement; only outer ring uses precise offsets. */}
+            {!rasterLayers && (
+              <g className="circleMeasure" aria-hidden="true">
+                <g className="circleGroup circleGroupInnerA">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerA[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-a-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerA"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerAMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerB">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerB[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-b-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerB"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerBMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerC">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerC[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-c-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerC"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerCMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerD">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerD[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-d-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerD"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerDMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerE">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerE[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-e-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerE"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerEMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerF">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerF[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-f-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerF"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerFMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerG">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerG[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-g-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerG"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerGMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+                <g className="circleGroup circleGroupInnerH">
+                  {displayedTracks.map((track, index) => {
+                    const fallbackOffset = `${(index + 0.5) * segmentPercent}%`;
+                    const offset = offsetsInnerH[index] ?? fallbackOffset;
+                    return (
+                      <text key={`${track.id}-inner-h-measure`} className="circleLabel circleLabelInner">
+                        <textPath
+                          href="#trackCirclePathInnerH"
+                          startOffset={offset}
+                          ref={(node) => {
+                            innerHMeasureRefs.current[index] = node;
+                          }}
+                        >
+                          {track.title}
+                        </textPath>
+                      </text>
+                    );
+                  })}
+                </g>
+              </g>
+            )}
           </svg>
         </div>
       </div>
