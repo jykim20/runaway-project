@@ -1171,22 +1171,6 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               }
               event.stopPropagation();
             }}
-            onPointerDown={(event) => {
-              const target = event.target as HTMLElement;
-              if (
-                target.closest(
-                  ".creditsLine, .creditsSectionTitle, .creditsTitle, .creditsDivider, .creditsLink"
-                )
-              ) {
-                event.stopPropagation();
-                return;
-              }
-              if (event.target === event.currentTarget || target.classList.contains("creditsColumn")) {
-                setShowCredits(false);
-                return;
-              }
-              event.stopPropagation();
-            }}
           >
             <div className="creditsColumn">
               <div className="creditsTitle">Runaway Project (19/12/2025)</div>
