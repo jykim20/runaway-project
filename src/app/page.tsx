@@ -1194,6 +1194,7 @@ svg { font-family: "Suisse Intl", sans-serif; font-weight: 200; }
               >
                 cover
               </a>
+              <div className="creditsLine">Runaway Project 2025 ©</div>
             </div>
           </div>
         </div>
